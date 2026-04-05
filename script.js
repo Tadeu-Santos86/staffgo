@@ -37,6 +37,7 @@ let vagaSelecionada = null;
 let usuarioAtual = null;
 let tipoUsuario = null;
 let nomeEmpresaAtual = "";
+let dadosCandidatoAtual = {};
 let todasAsVagas = [];
 let acessoLiberado = false;
 let vagaEditandoId = null;
@@ -60,6 +61,7 @@ window.limparFiltrosVagas = limparFiltrosVagas;
 window.verificarAcesso = verificarAcesso;
 window.compartilharVaga = compartilharVaga;
 window.editarVaga = editarVaga;
+window.salvarPerfilCandidato = salvarPerfilCandidato;
 
 onAuthStateChanged(auth, async (user) => {
   if (user) {
@@ -76,7 +78,8 @@ onAuthStateChanged(auth, async (user) => {
     const usuario = await getDoc(doc(db, "Usuarios", user.uid));
     if (usuario.exists()) {
       tipoUsuario = "candidato";
-      aplicarCandidatoLogado(usuario.data().Nome || "");
+      dadosCandidatoAtual = usuario.data() || {};
+      aplicarCandidatoLogado(dadosCandidatoAtual.Nome || "");
       return;
     }
   }
@@ -84,6 +87,7 @@ onAuthStateChanged(auth, async (user) => {
   usuarioAtual = null;
   tipoUsuario = null;
   nomeEmpresaAtual = "";
+  dadosCandidatoAtual = {};
   resetarInterfaces();
 });
 
@@ -113,6 +117,15 @@ function aplicarCandidatoLogado(nome) {
   document.getElementById("candidato-logado-box").classList.remove("oculto");
   document.getElementById("candidato-painel").classList.remove("oculto");
   document.getElementById("candidato-logado-nome").textContent = nome || "Candidato";
+
+  const perfilNome = document.getElementById("perfil-cand-nome");
+  const perfilWhatsApp = document.getElementById("perfil-cand-whatsapp");
+  const perfilExperiencia = document.getElementById("perfil-cand-experiencia");
+
+  if (perfilNome) perfilNome.value = dadosCandidatoAtual.Nome || "";
+  if (perfilWhatsApp) perfilWhatsApp.value = dadosCandidatoAtual.WhatsApp || "";
+  if (perfilExperiencia) perfilExperiencia.value = dadosCandidatoAtual.Experiencia || "";
+
   carregarMinhasCandidaturas();
 }
 
@@ -194,7 +207,9 @@ async function cadastrarCandidato() {
 
     await setDoc(doc(db, "Usuarios", cred.user.uid), {
       Nome: nome,
-      Email: email
+      Email: email,
+      WhatsApp: "",
+      Experiencia: ""
     });
 
     document.getElementById("mensagem-candidato-auth").innerHTML = "Candidato cadastrado com sucesso.";
@@ -228,6 +243,40 @@ async function logoutCandidato() {
   } catch (erro) {
     console.error("Erro ao sair:", erro);
     alert("Erro ao sair.");
+  }
+}
+
+async function salvarPerfilCandidato() {
+  if (!usuarioAtual || tipoUsuario !== "candidato") {
+    alert("Faça login como candidato.");
+    return;
+  }
+
+  const nome = document.getElementById("perfil-cand-nome").value.trim();
+  const whatsapp = document.getElementById("perfil-cand-whatsapp").value.trim();
+  const experiencia = document.getElementById("perfil-cand-experiencia").value.trim();
+
+  if (!nome) {
+    alert("Preencha pelo menos o nome.");
+    return;
+  }
+
+  try {
+    await updateDoc(doc(db, "Usuarios", usuarioAtual.uid), {
+      Nome: nome,
+      WhatsApp: whatsapp,
+      Experiencia: experiencia
+    });
+
+    dadosCandidatoAtual.Nome = nome;
+    dadosCandidatoAtual.WhatsApp = whatsapp;
+    dadosCandidatoAtual.Experiencia = experiencia;
+
+    document.getElementById("candidato-logado-nome").textContent = nome;
+    document.getElementById("mensagem-perfil-candidato").innerHTML = "Perfil atualizado com sucesso.";
+  } catch (erro) {
+    console.error("Erro ao salvar perfil do candidato:", erro);
+    document.getElementById("mensagem-perfil-candidato").innerHTML = "Erro ao salvar perfil.";
   }
 }
 
@@ -474,9 +523,11 @@ async function carregarVagasEmpresa() {
 
 function abrirModalCandidatura(titulo, empresa, cidade) {
   vagaSelecionada = { titulo, empresa, cidade };
-  document.getElementById("cand-nome").value = "";
-  document.getElementById("cand-whatsapp").value = "";
-  document.getElementById("cand-experiencia").value = "";
+
+  document.getElementById("cand-nome").value = dadosCandidatoAtual.Nome || "";
+  document.getElementById("cand-whatsapp").value = dadosCandidatoAtual.WhatsApp || "";
+  document.getElementById("cand-experiencia").value = dadosCandidatoAtual.Experiencia || "";
+
   document.getElementById("mensagem-candidatura").innerHTML = "";
   document.getElementById("modal-candidatura-fundo").style.display = "block";
 }
@@ -506,6 +557,25 @@ async function enviarCandidatura() {
   }
 
   try {
+    await updateDoc(doc(db, "Usuarios", usuarioAtual.uid), {
+      Nome: nome,
+      WhatsApp: whatsapp,
+      Experiencia: experiencia
+    });
+
+    dadosCandidatoAtual.Nome = nome;
+    dadosCandidatoAtual.WhatsApp = whatsapp;
+    dadosCandidatoAtual.Experiencia = experiencia;
+    document.getElementById("candidato-logado-nome").textContent = nome;
+
+    const perfilNome = document.getElementById("perfil-cand-nome");
+    const perfilWhatsApp = document.getElementById("perfil-cand-whatsapp");
+    const perfilExperiencia = document.getElementById("perfil-cand-experiencia");
+
+    if (perfilNome) perfilNome.value = nome;
+    if (perfilWhatsApp) perfilWhatsApp.value = whatsapp;
+    if (perfilExperiencia) perfilExperiencia.value = experiencia;
+
     await addDoc(collection(db, "Candidatos"), {
       Nome: nome,
       WhatsApp: whatsapp,

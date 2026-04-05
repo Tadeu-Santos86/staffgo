@@ -56,9 +56,17 @@
     .secao h2 {
       text-align: center;
       margin-top: 0;
+      color: white;
     }
 
-    input {
+    label {
+      display: block;
+      margin-bottom: 6px;
+      color: #cbd5e1;
+      font-weight: bold;
+    }
+
+    input, textarea {
       width: 100%;
       padding: 12px;
       margin: 8px 0 16px 0;
@@ -66,6 +74,12 @@
       border: none;
       font-size: 15px;
       box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    textarea {
+      min-height: 90px;
+      resize: vertical;
     }
 
     .vaga {
@@ -89,6 +103,17 @@
     .acoes-vaga {
       margin-top: 12px;
     }
+
+    .topo-acoes {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .mensagem {
+      text-align: center;
+      color: #cbd5e1;
+      margin-top: 15px;
+    }
   </style>
 </head>
 <body>
@@ -103,7 +128,11 @@
 
   <div id="secao-vagas" class="secao">
     <h2>Vagas disponíveis</h2>
+    <div class="topo-acoes">
+      <button onclick="carregarVagas()">Atualizar vagas</button>
+    </div>
     <div id="vagas"></div>
+    <div id="mensagem-vagas" class="mensagem"></div>
   </div>
 
   <div id="secao-empresa" class="secao">
@@ -115,12 +144,19 @@
     <label for="empresa">Empresa</label>
     <input type="text" id="empresa" placeholder="Ex: Resort Luxo SP">
 
-    <label for="local">Local</label>
-    <input type="text" id="local" placeholder="Ex: São Paulo">
+    <label for="cidade">Cidade</label>
+    <input type="text" id="cidade" placeholder="Ex: São Paulo">
+
+    <label for="salario">Salário</label>
+    <input type="text" id="salario" placeholder="Ex: R$ 2.000">
+
+    <label for="descricao">Descrição</label>
+    <textarea id="descricao" placeholder="Ex: Atendimento ao cliente, check-in e suporte"></textarea>
 
     <button onclick="cadastrarVaga()">Salvar vaga</button>
+    <div id="mensagem-empresa" class="mensagem"></div>
   </div>
 
-  <script src="script.js"></script>
+  <script type="module" src="script.js"></script>
 </body>
 </html>

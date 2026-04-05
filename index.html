@@ -34,6 +34,7 @@ input, textarea, select {
   max-width: 100%;
   border-radius: 8px;
   border: none;
+  box-sizing: border-box;
 }
 
 textarea {
@@ -69,6 +70,11 @@ hr {
   color: white;
 }
 
+.acao-neutra {
+  background: #94a3b8;
+  color: #0f172a;
+}
+
 #modal-candidatura-fundo,
 #modal-candidatos-fundo {
   display: none;
@@ -76,13 +82,14 @@ hr {
   inset: 0;
   background: rgba(0,0,0,0.75);
   z-index: 1000;
+  overflow-y: auto;
 }
 
 .modal-box {
   background: #1e293b;
   padding: 20px;
   margin: 60px auto;
-  width: 360px;
+  width: 420px;
   max-width: calc(100% - 40px);
   border-radius: 10px;
 }
@@ -99,6 +106,50 @@ hr {
   margin-top: 10px;
   color: #cbd5e1;
 }
+
+.filtros-box {
+  background: #1e293b;
+  padding: 15px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+
+.filtros-linha {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: end;
+}
+
+.filtros-linha input {
+  margin: 0;
+}
+
+.filtro-item {
+  min-width: 220px;
+}
+
+.filtro-item label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: bold;
+}
+
+@media (max-width: 700px) {
+  .filtros-linha {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filtro-item {
+    min-width: auto;
+    width: 100%;
+  }
+
+  .filtro-item input {
+    width: 100%;
+  }
+}
 </style>
 </head>
 <body>
@@ -114,6 +165,28 @@ hr {
 <!-- VAGAS -->
 <div id="secao-vagas">
   <h2>Vagas disponíveis</h2>
+
+  <div class="filtros-box">
+    <h3>Buscar vagas</h3>
+
+    <div class="filtros-linha">
+      <div class="filtro-item">
+        <label for="filtro-titulo">Cargo / vaga</label>
+        <input id="filtro-titulo" placeholder="Ex: Recepcionista">
+      </div>
+
+      <div class="filtro-item">
+        <label for="filtro-cidade">Cidade</label>
+        <input id="filtro-cidade" placeholder="Ex: São Paulo">
+      </div>
+
+      <div>
+        <button class="acao-candidato" onclick="aplicarFiltrosVagas()">Filtrar</button>
+        <button class="acao-neutra" onclick="limparFiltrosVagas()">Limpar filtros</button>
+      </div>
+    </div>
+  </div>
+
   <div id="mensagem-vagas" class="mensagem"></div>
   <div id="vagas"></div>
 </div>

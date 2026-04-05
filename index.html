@@ -6,43 +6,105 @@
 
 <style>
 body {
-  font-family: Arial;
+  font-family: Arial, sans-serif;
   background: #0f172a;
   color: white;
   padding: 20px;
+  margin: 0;
+}
+
+h1, h2, h3 {
+  color: white;
 }
 
 button {
   margin: 5px;
-  padding: 10px;
+  padding: 10px 14px;
   cursor: pointer;
+  border-radius: 8px;
+  border: none;
+  font-weight: bold;
 }
 
-input, textarea {
+input, textarea, select {
   display: block;
   margin: 10px 0;
-  padding: 8px;
-  width: 300px;
+  padding: 10px;
+  width: 320px;
+  max-width: 100%;
+  border-radius: 8px;
+  border: none;
 }
 
-.vaga {
+textarea {
+  min-height: 90px;
+}
+
+hr {
+  margin: 20px 0;
+  border-color: #334155;
+}
+
+.vaga, .candidato {
   background: #1e293b;
   padding: 15px;
-  margin: 10px 0;
-  border-radius: 8px;
+  margin: 12px 0;
+  border-radius: 10px;
 }
 
 .oculto {
   display: none;
 }
-</style>
 
+.acao-empresa {
+  background: #22c55e;
+}
+
+.acao-candidato {
+  background: #38bdf8;
+}
+
+.acao-alerta {
+  background: #ef4444;
+  color: white;
+}
+
+#modal-candidatura-fundo,
+#modal-candidatos-fundo {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  z-index: 1000;
+}
+
+.modal-box {
+  background: #1e293b;
+  padding: 20px;
+  margin: 60px auto;
+  width: 360px;
+  max-width: calc(100% - 40px);
+  border-radius: 10px;
+}
+
+.linha-status {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.mensagem {
+  margin-top: 10px;
+  color: #cbd5e1;
+}
+</style>
 </head>
 <body>
 
 <h1>StaffGo</h1>
 
-<!-- MENU -->
 <button onclick="abrirSecao('secao-vagas')">Ver vagas</button>
 <button onclick="abrirSecao('secao-empresa')">Sou empresa</button>
 <button onclick="abrirSecao('secao-candidato')">Sou candidato</button>
@@ -52,7 +114,7 @@ input, textarea {
 <!-- VAGAS -->
 <div id="secao-vagas">
   <h2>Vagas disponíveis</h2>
-  <div id="mensagem-vagas"></div>
+  <div id="mensagem-vagas" class="mensagem"></div>
   <div id="vagas"></div>
 </div>
 
@@ -66,15 +128,15 @@ input, textarea {
     <input id="empresa-email" placeholder="Email">
     <input id="empresa-senha" type="password" placeholder="Senha">
 
-    <button onclick="cadastrarEmpresa()">Cadastrar</button>
-    <button onclick="loginEmpresa()">Entrar</button>
+    <button class="acao-empresa" onclick="cadastrarEmpresa()">Cadastrar</button>
+    <button class="acao-candidato" onclick="loginEmpresa()">Entrar</button>
 
-    <div id="mensagem-auth"></div>
+    <div id="mensagem-auth" class="mensagem"></div>
   </div>
 
   <div id="empresa-logada-box" class="oculto">
     <p><strong>Empresa:</strong> <span id="empresa-logada-nome"></span></p>
-    <button onclick="logoutEmpresa()">Sair</button>
+    <button class="acao-alerta" onclick="logoutEmpresa()">Sair</button>
   </div>
 
   <div id="empresa-painel-conteudo" class="oculto">
@@ -87,12 +149,12 @@ input, textarea {
     <input id="salario" placeholder="Salário">
     <textarea id="descricao" placeholder="Descrição"></textarea>
 
-    <button onclick="salvarOuAtualizarVaga()">Salvar vaga</button>
+    <button class="acao-empresa" onclick="salvarOuAtualizarVaga()">Salvar vaga</button>
 
-    <div id="mensagem-empresa"></div>
+    <div id="mensagem-empresa" class="mensagem"></div>
 
     <h3>Minhas vagas</h3>
-    <div id="mensagem-vagas-empresa"></div>
+    <div id="mensagem-vagas-empresa" class="mensagem"></div>
     <div id="vagas-empresa"></div>
 
   </div>
@@ -109,15 +171,15 @@ input, textarea {
     <input id="cand-email" placeholder="Email">
     <input id="cand-senha" type="password" placeholder="Senha">
 
-    <button onclick="cadastrarCandidato()">Cadastrar</button>
-    <button onclick="loginCandidato()">Entrar</button>
+    <button class="acao-empresa" onclick="cadastrarCandidato()">Cadastrar</button>
+    <button class="acao-candidato" onclick="loginCandidato()">Entrar</button>
 
-    <div id="mensagem-candidato-auth"></div>
+    <div id="mensagem-candidato-auth" class="mensagem"></div>
   </div>
 
   <div id="candidato-logado-box" class="oculto">
     <p><strong>Logado como:</strong> <span id="candidato-logado-nome"></span></p>
-    <button onclick="logoutCandidato()">Sair</button>
+    <button class="acao-alerta" onclick="logoutCandidato()">Sair</button>
   </div>
 
   <div id="candidato-painel" class="oculto">
@@ -128,23 +190,29 @@ input, textarea {
 </div>
 
 <!-- MODAL CANDIDATURA -->
-<div id="modal-candidatura-fundo" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000a;">
-
-  <div style="background:#1e293b; padding:20px; margin:100px auto; width:300px; border-radius:8px;">
-
+<div id="modal-candidatura-fundo">
+  <div class="modal-box">
     <h3>Candidatar-se</h3>
 
     <input id="cand-nome" placeholder="Nome">
     <input id="cand-whatsapp" placeholder="WhatsApp">
     <textarea id="cand-experiencia" placeholder="Experiência"></textarea>
 
-    <button onclick="enviarCandidatura()">Enviar</button>
-    <button onclick="fecharModalCandidatura()">Fechar</button>
+    <button class="acao-empresa" onclick="enviarCandidatura()">Enviar</button>
+    <button class="acao-alerta" onclick="fecharModalCandidatura()">Fechar</button>
 
-    <div id="mensagem-candidatura"></div>
-
+    <div id="mensagem-candidatura" class="mensagem"></div>
   </div>
+</div>
 
+<!-- MODAL CANDIDATOS DA EMPRESA -->
+<div id="modal-candidatos-fundo">
+  <div class="modal-box">
+    <h3>Candidatos da vaga</h3>
+    <div id="lista-candidatos"></div>
+    <div id="mensagem-candidatos" class="mensagem"></div>
+    <button class="acao-alerta" onclick="fecharModalCandidatos()">Fechar</button>
+  </div>
 </div>
 
 <script type="module" src="script.js"></script>

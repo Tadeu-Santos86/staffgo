@@ -39,6 +39,7 @@ let tipoUsuario = null;
 let nomeEmpresaAtual = "";
 let todasAsVagas = [];
 let acessoLiberado = false;
+let vagaEditandoId = null;
 
 window.abrirSecao = abrirSecao;
 window.cadastrarEmpresa = cadastrarEmpresa;
@@ -58,6 +59,7 @@ window.aplicarFiltrosVagas = aplicarFiltrosVagas;
 window.limparFiltrosVagas = limparFiltrosVagas;
 window.verificarAcesso = verificarAcesso;
 window.compartilharVaga = compartilharVaga;
+window.editarVaga = editarVaga;
 
 onAuthStateChanged(auth, async (user) => {
   if (user) {
@@ -170,6 +172,7 @@ async function loginEmpresa() {
 async function logoutEmpresa() {
   try {
     await signOut(auth);
+    vagaEditandoId = null;
   } catch (erro) {
     console.error("Erro ao sair:", erro);
     alert("Erro ao sair.");
@@ -246,19 +249,34 @@ async function salvarOuAtualizarVaga() {
   }
 
   try {
-    await addDoc(collection(db, "Vagas"), {
-      Titulo: titulo,
-      Empresa: empresa,
-      Cidade: cidade,
-      Salario: salario,
-      Descrição: descricao,
-      EmpresaId: usuarioAtual.uid,
-      EmpresaNome: nomeEmpresaAtual,
-      Data: new Date()
-    });
+    if (vagaEditandoId) {
+      await updateDoc(doc(db, "Vagas", vagaEditandoId), {
+        Titulo: titulo,
+        Empresa: empresa,
+        Cidade: cidade,
+        Salario: salario,
+        Descrição: descricao
+      });
 
-    document.getElementById("mensagem-empresa").innerHTML = "Vaga cadastrada com sucesso.";
+      document.getElementById("mensagem-empresa").innerHTML = "Vaga atualizada com sucesso.";
+      vagaEditandoId = null;
+    } else {
+      await addDoc(collection(db, "Vagas"), {
+        Titulo: titulo,
+        Empresa: empresa,
+        Cidade: cidade,
+        Salario: salario,
+        Descrição: descricao,
+        EmpresaId: usuarioAtual.uid,
+        EmpresaNome: nomeEmpresaAtual,
+        Data: new Date()
+      });
+
+      document.getElementById("mensagem-empresa").innerHTML = "Vaga cadastrada com sucesso.";
+    }
+
     document.getElementById("titulo").value = "";
+    document.getElementById("empresa").value = nomeEmpresaAtual || "";
     document.getElementById("cidade").value = "";
     document.getElementById("salario").value = "";
     document.getElementById("descricao").value = "";
@@ -269,6 +287,20 @@ async function salvarOuAtualizarVaga() {
     console.error("Erro ao salvar vaga:", erro);
     alert("Erro ao salvar vaga.");
   }
+}
+
+function editarVaga(id, titulo, empresa, cidade, salario, descricao) {
+  document.getElementById("titulo").value = titulo;
+  document.getElementById("empresa").value = empresa;
+  document.getElementById("cidade").value = cidade;
+  document.getElementById("salario").value = salario;
+  document.getElementById("descricao").value = descricao;
+
+  vagaEditandoId = id;
+
+  document.getElementById("mensagem-empresa").innerHTML = "Modo edição ativado. Altere os dados e clique em Salvar vaga.";
+  abrirSecao("secao-empresa");
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 async function carregarVagas() {
@@ -415,6 +447,7 @@ async function carregarVagasEmpresa() {
       const titulo = vaga.Titulo || "";
       const cidade = vaga.Cidade || "";
       const salario = vaga.Salario || "";
+      const descricao = vaga.Descrição || "";
 
       const div = document.createElement("div");
       div.className = "vaga";
@@ -423,7 +456,10 @@ async function carregarVagasEmpresa() {
         <h3>${titulo}</h3>
         <p><strong>Cidade:</strong> ${cidade}</p>
         <p><strong>Salário:</strong> ${salario}</p>
-        <button class="acao-candidato" onclick="verCandidatosDaVaga('${escapeTexto(titulo)}')">Ver candidatos</button>
+        <div class="actions">
+          <button class="acao-candidato" onclick="verCandidatosDaVaga('${escapeTexto(titulo)}')">Ver candidatos</button>
+          <button class="acao-empresa" onclick="editarVaga('${docItem.id}','${escapeTexto(titulo)}','${escapeTexto(nomeEmpresaAtual)}','${escapeTexto(cidade)}','${escapeTexto(salario)}','${escapeTexto(descricao)}')">Editar vaga</button>
+        </div>
       `;
 
       container.appendChild(div);
@@ -639,6 +675,7 @@ function fecharModalCandidatos() {
 
 function escapeTexto(texto) {
   return String(texto)
+    .replace(/\\/g, "\\\\")
     .replace(/'/g, "\\'")
     .replace(/"/g, "&quot;")
     .replace(/\n/g, " ");

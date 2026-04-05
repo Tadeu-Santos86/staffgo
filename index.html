@@ -2,77 +2,321 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>StaffGo</title>
 
 <style>
-body {
-  font-family: Arial, sans-serif;
-  background: #0f172a;
-  color: white;
-  padding: 20px;
-  margin: 0;
+:root {
+  --bg: #081120;
+  --bg-soft: #0f172a;
+  --card: #162235;
+  --card-2: #1c2b42;
+  --text: #f8fafc;
+  --muted: #94a3b8;
+  --line: #243247;
+  --primary: #22c55e;
+  --primary-dark: #16a34a;
+  --secondary: #38bdf8;
+  --secondary-dark: #0ea5e9;
+  --danger: #ef4444;
+  --danger-dark: #dc2626;
+  --neutral: #cbd5e1;
+  --shadow: 0 12px 30px rgba(0,0,0,0.28);
+  --radius: 16px;
 }
 
-h1, h2, h3 {
-  color: white;
-}
-
-button {
-  margin: 5px;
-  padding: 10px 14px;
-  cursor: pointer;
-  border-radius: 8px;
-  border: none;
-  font-weight: bold;
-}
-
-input, textarea, select {
-  display: block;
-  margin: 10px 0;
-  padding: 10px;
-  width: 320px;
-  max-width: 100%;
-  border-radius: 8px;
-  border: none;
+* {
   box-sizing: border-box;
 }
 
-textarea {
-  min-height: 90px;
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(34,197,94,0.10), transparent 22%),
+    radial-gradient(circle at top right, rgba(56,189,248,0.10), transparent 20%),
+    linear-gradient(180deg, #07101d 0%, #0b1423 100%);
+  color: var(--text);
+  min-height: 100%;
 }
 
-hr {
-  margin: 20px 0;
-  border-color: #334155;
+body {
+  padding: 24px;
 }
 
-.vaga, .candidato {
-  background: #1e293b;
-  padding: 15px;
-  margin: 12px 0;
-  border-radius: 10px;
+.container {
+  max-width: 1180px;
+  margin: 0 auto;
 }
 
-.oculto {
-  display: none;
+.hero {
+  background: linear-gradient(135deg, rgba(34,197,94,0.14), rgba(56,189,248,0.12));
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 24px;
+  padding: 32px 28px;
+  box-shadow: var(--shadow);
+  margin-bottom: 24px;
+}
+
+.hero-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.logo-box {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.logo-mark {
+  width: 54px;
+  height: 54px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #03101b;
+  font-weight: 900;
+  font-size: 24px;
+  box-shadow: 0 8px 24px rgba(34,197,94,0.35);
+}
+
+.hero h1 {
+  margin: 0;
+  font-size: 40px;
+  line-height: 1.05;
+}
+
+.hero p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 16px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,0.06);
+  color: var(--neutral);
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: 10px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.menu {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 24px;
+}
+
+button {
+  border: none;
+  border-radius: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: .18s ease;
+  font-size: 14px;
+}
+
+button:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.04);
 }
 
 .acao-empresa {
-  background: #22c55e;
+  background: var(--primary);
+  color: #04120a;
+}
+
+.acao-empresa:hover {
+  background: var(--primary-dark);
 }
 
 .acao-candidato {
-  background: #38bdf8;
+  background: var(--secondary);
+  color: #03111a;
+}
+
+.acao-candidato:hover {
+  background: var(--secondary-dark);
 }
 
 .acao-alerta {
-  background: #ef4444;
+  background: var(--danger);
   color: white;
 }
 
+.acao-alerta:hover {
+  background: var(--danger-dark);
+}
+
 .acao-neutra {
-  background: #94a3b8;
+  background: var(--neutral);
   color: #0f172a;
+}
+
+.section {
+  display: block;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 22px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow);
+}
+
+.section[style*="display:none"] {
+  display: none !important;
+}
+
+.section h2 {
+  margin-top: 0;
+  margin-bottom: 18px;
+  font-size: 24px;
+}
+
+.card {
+  background: linear-gradient(180deg, var(--card) 0%, var(--card-2) 100%);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: var(--radius);
+  padding: 18px;
+  box-shadow: var(--shadow);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.form-grid-full {
+  grid-column: 1 / -1;
+}
+
+input, textarea, select {
+  width: 100%;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 12px 14px;
+  color: white;
+  outline: none;
+  font-size: 14px;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #9fb0c7;
+}
+
+textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--neutral);
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.mensagem {
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.vagas-grid,
+.candidaturas-grid,
+.candidatos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.vaga, .candidato {
+  background: linear-gradient(180deg, #132033 0%, #1c2a41 100%);
+  border: 1px solid rgba(255,255,255,0.06);
+  padding: 18px;
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+}
+
+.vaga h3, .candidato h3 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  font-size: 20px;
+  color: #ffffff;
+}
+
+.vaga p, .candidato p {
+  margin: 7px 0;
+  color: var(--neutral);
+  line-height: 1.45;
+  font-size: 14px;
+}
+
+.vaga strong, .candidato strong {
+  color: white;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.14), transparent);
+  margin: 22px 0;
+}
+
+.filtros-box {
+  margin-bottom: 20px;
+}
+
+.filtros-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  align-items: end;
+}
+
+.top-info {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.info-pill {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.06);
+  color: var(--neutral);
+  border-radius: 999px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.oculto {
+  display: none !important;
 }
 
 #modal-candidatura-fundo,
@@ -80,18 +324,27 @@ hr {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.75);
+  background: rgba(2, 6, 23, 0.78);
+  backdrop-filter: blur(4px);
   z-index: 1000;
   overflow-y: auto;
+  padding: 24px;
 }
 
 .modal-box {
-  background: #1e293b;
-  padding: 20px;
-  margin: 60px auto;
-  width: 420px;
-  max-width: calc(100% - 40px);
-  border-radius: 10px;
+  background: linear-gradient(180deg, #132033 0%, #1c2a41 100%);
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: 22px;
+  margin: 40px auto;
+  width: 520px;
+  max-width: 100%;
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+}
+
+.modal-box h3 {
+  margin-top: 0;
+  font-size: 24px;
 }
 
 .linha-status {
@@ -102,51 +355,35 @@ hr {
   flex-wrap: wrap;
 }
 
-.mensagem {
-  margin-top: 10px;
-  color: #cbd5e1;
+.footer-note {
+  color: #7f8ea7;
+  font-size: 12px;
+  text-align: center;
+  margin-top: 24px;
 }
 
-.filtros-box {
-  background: #1e293b;
-  padding: 15px;
-  border-radius: 10px;
-  margin-bottom: 20px;
-}
+@media (max-width: 780px) {
+  body {
+    padding: 14px;
+  }
 
-.filtros-linha {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: end;
-}
+  .hero {
+    padding: 22px 18px;
+  }
 
-.filtros-linha input {
-  margin: 0;
-}
+  .hero h1 {
+    font-size: 30px;
+  }
 
-.filtro-item {
-  min-width: 220px;
-}
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
 
-.filtro-item label {
-  display: block;
-  margin-bottom: 6px;
-  font-weight: bold;
-}
-
-@media (max-width: 700px) {
-  .filtros-linha {
+  .menu {
     flex-direction: column;
-    align-items: stretch;
   }
 
-  .filtro-item {
-    min-width: auto;
-    width: 100%;
-  }
-
-  .filtro-item input {
+  .menu button {
     width: 100%;
   }
 }
@@ -154,141 +391,225 @@ hr {
 </head>
 <body>
 
-<h1>StaffGo</h1>
+<div class="container">
 
-<button onclick="abrirSecao('secao-vagas')">Ver vagas</button>
-<button onclick="abrirSecao('secao-empresa')">Sou empresa</button>
-<button onclick="abrirSecao('secao-candidato')">Sou candidato</button>
-
-<hr>
-
-<!-- VAGAS -->
-<div id="secao-vagas">
-  <h2>Vagas disponíveis</h2>
-
-  <div class="filtros-box">
-    <h3>Buscar vagas</h3>
-
-    <div class="filtros-linha">
-      <div class="filtro-item">
-        <label for="filtro-titulo">Cargo / vaga</label>
-        <input id="filtro-titulo" placeholder="Ex: Recepcionista">
+  <div class="hero">
+    <div class="hero-top">
+      <div class="logo-box">
+        <div class="logo-mark">S</div>
+        <div>
+          <h1>StaffGo</h1>
+          <p>Conectando empresas e profissionais com agilidade, clareza e escala.</p>
+        </div>
       </div>
 
-      <div class="filtro-item">
-        <label for="filtro-cidade">Cidade</label>
-        <input id="filtro-cidade" placeholder="Ex: São Paulo">
+      <div class="badge">MVP funcional em evolução</div>
+    </div>
+
+    <div class="menu">
+      <button class="acao-neutra" onclick="abrirSecao('secao-vagas')">Ver vagas</button>
+      <button class="acao-empresa" onclick="abrirSecao('secao-empresa')">Sou empresa</button>
+      <button class="acao-candidato" onclick="abrirSecao('secao-candidato')">Sou candidato</button>
+    </div>
+  </div>
+
+  <!-- VAGAS -->
+  <div id="secao-vagas" class="section">
+    <h2>Vagas disponíveis</h2>
+
+    <div class="card filtros-box">
+      <div class="filtros-grid">
+        <div>
+          <label for="filtro-titulo">Cargo / vaga</label>
+          <input id="filtro-titulo" placeholder="Ex: Recepcionista">
+        </div>
+
+        <div>
+          <label for="filtro-cidade">Cidade</label>
+          <input id="filtro-cidade" placeholder="Ex: São Paulo">
+        </div>
+
+        <div class="actions">
+          <button class="acao-candidato" onclick="aplicarFiltrosVagas()">Filtrar</button>
+          <button class="acao-neutra" onclick="limparFiltrosVagas()">Limpar filtros</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="mensagem-vagas" class="mensagem"></div>
+    <div id="vagas" class="vagas-grid"></div>
+  </div>
+
+  <!-- EMPRESA -->
+  <div id="secao-empresa" class="section" style="display:none">
+    <h2>Área da empresa</h2>
+
+    <div id="empresa-auth" class="card">
+      <div class="form-grid">
+        <div>
+          <label for="empresa-nome-cadastro">Nome da empresa</label>
+          <input id="empresa-nome-cadastro" placeholder="Nome da empresa">
+        </div>
+
+        <div>
+          <label for="empresa-email">E-mail</label>
+          <input id="empresa-email" placeholder="Email">
+        </div>
+
+        <div class="form-grid-full">
+          <label for="empresa-senha">Senha</label>
+          <input id="empresa-senha" type="password" placeholder="Senha">
+        </div>
       </div>
 
-      <div>
-        <button class="acao-candidato" onclick="aplicarFiltrosVagas()">Filtrar</button>
-        <button class="acao-neutra" onclick="limparFiltrosVagas()">Limpar filtros</button>
+      <div class="actions">
+        <button class="acao-empresa" onclick="cadastrarEmpresa()">Cadastrar</button>
+        <button class="acao-candidato" onclick="loginEmpresa()">Entrar</button>
+      </div>
+
+      <div id="mensagem-auth" class="mensagem"></div>
+    </div>
+
+    <div id="empresa-logada-box" class="card oculto">
+      <div class="top-info">
+        <div class="info-pill">Empresa: <span id="empresa-logada-nome"></span></div>
+      </div>
+      <button class="acao-alerta" onclick="logoutEmpresa()">Sair</button>
+    </div>
+
+    <div id="empresa-painel-conteudo" class="oculto">
+      <div class="divider"></div>
+
+      <div class="card">
+        <h3>Cadastrar vaga</h3>
+
+        <div class="form-grid">
+          <div>
+            <label for="titulo">Título</label>
+            <input id="titulo" placeholder="Título da vaga">
+          </div>
+
+          <div>
+            <label for="empresa">Empresa</label>
+            <input id="empresa" placeholder="Empresa">
+          </div>
+
+          <div>
+            <label for="cidade">Cidade</label>
+            <input id="cidade" placeholder="Cidade">
+          </div>
+
+          <div>
+            <label for="salario">Salário</label>
+            <input id="salario" placeholder="Salário">
+          </div>
+
+          <div class="form-grid-full">
+            <label for="descricao">Descrição</label>
+            <textarea id="descricao" placeholder="Descrição"></textarea>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="acao-empresa" onclick="salvarOuAtualizarVaga()">Salvar vaga</button>
+        </div>
+
+        <div id="mensagem-empresa" class="mensagem"></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <h3>Minhas vagas</h3>
+      <div id="mensagem-vagas-empresa" class="mensagem"></div>
+      <div id="vagas-empresa" class="vagas-grid"></div>
+    </div>
+  </div>
+
+  <!-- CANDIDATO -->
+  <div id="secao-candidato" class="section" style="display:none">
+    <h2>Área do candidato</h2>
+
+    <div id="candidato-auth" class="card">
+      <div class="form-grid">
+        <div>
+          <label for="cand-nome-cadastro">Seu nome</label>
+          <input id="cand-nome-cadastro" placeholder="Seu nome">
+        </div>
+
+        <div>
+          <label for="cand-email">E-mail</label>
+          <input id="cand-email" placeholder="Email">
+        </div>
+
+        <div class="form-grid-full">
+          <label for="cand-senha">Senha</label>
+          <input id="cand-senha" type="password" placeholder="Senha">
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="acao-empresa" onclick="cadastrarCandidato()">Cadastrar</button>
+        <button class="acao-candidato" onclick="loginCandidato()">Entrar</button>
+      </div>
+
+      <div id="mensagem-candidato-auth" class="mensagem"></div>
+    </div>
+
+    <div id="candidato-logado-box" class="card oculto">
+      <div class="top-info">
+        <div class="info-pill">Logado como: <span id="candidato-logado-nome"></span></div>
+      </div>
+      <button class="acao-alerta" onclick="logoutCandidato()">Sair</button>
+    </div>
+
+    <div id="candidato-painel" class="oculto">
+      <div class="divider"></div>
+      <h3>Minhas candidaturas</h3>
+      <div id="minhas-candidaturas" class="candidaturas-grid"></div>
+    </div>
+  </div>
+
+  <!-- MODAL CANDIDATURA -->
+  <div id="modal-candidatura-fundo">
+    <div class="modal-box">
+      <h3>Candidatar-se</h3>
+
+      <label for="cand-nome">Nome</label>
+      <input id="cand-nome" placeholder="Nome">
+
+      <label for="cand-whatsapp">WhatsApp</label>
+      <input id="cand-whatsapp" placeholder="WhatsApp">
+
+      <label for="cand-experiencia">Experiência</label>
+      <textarea id="cand-experiencia" placeholder="Experiência"></textarea>
+
+      <div class="actions">
+        <button class="acao-empresa" onclick="enviarCandidatura()">Enviar</button>
+        <button class="acao-alerta" onclick="fecharModalCandidatura()">Fechar</button>
+      </div>
+
+      <div id="mensagem-candidatura" class="mensagem"></div>
+    </div>
+  </div>
+
+  <!-- MODAL CANDIDATOS -->
+  <div id="modal-candidatos-fundo">
+    <div class="modal-box">
+      <h3>Candidatos da vaga</h3>
+      <div id="lista-candidatos" class="candidatos-grid"></div>
+      <div id="mensagem-candidatos" class="mensagem"></div>
+      <div class="actions">
+        <button class="acao-alerta" onclick="fecharModalCandidatos()">Fechar</button>
       </div>
     </div>
   </div>
 
-  <div id="mensagem-vagas" class="mensagem"></div>
-  <div id="vagas"></div>
-</div>
-
-<!-- EMPRESA -->
-<div id="secao-empresa" style="display:none">
-
-  <h2>Área da Empresa</h2>
-
-  <div id="empresa-auth">
-    <input id="empresa-nome-cadastro" placeholder="Nome da empresa">
-    <input id="empresa-email" placeholder="Email">
-    <input id="empresa-senha" type="password" placeholder="Senha">
-
-    <button class="acao-empresa" onclick="cadastrarEmpresa()">Cadastrar</button>
-    <button class="acao-candidato" onclick="loginEmpresa()">Entrar</button>
-
-    <div id="mensagem-auth" class="mensagem"></div>
+  <div class="footer-note">
+    StaffGo MVP • versão visual profissional
   </div>
 
-  <div id="empresa-logada-box" class="oculto">
-    <p><strong>Empresa:</strong> <span id="empresa-logada-nome"></span></p>
-    <button class="acao-alerta" onclick="logoutEmpresa()">Sair</button>
-  </div>
-
-  <div id="empresa-painel-conteudo" class="oculto">
-
-    <h3>Cadastrar vaga</h3>
-
-    <input id="titulo" placeholder="Título">
-    <input id="empresa" placeholder="Empresa">
-    <input id="cidade" placeholder="Cidade">
-    <input id="salario" placeholder="Salário">
-    <textarea id="descricao" placeholder="Descrição"></textarea>
-
-    <button class="acao-empresa" onclick="salvarOuAtualizarVaga()">Salvar vaga</button>
-
-    <div id="mensagem-empresa" class="mensagem"></div>
-
-    <h3>Minhas vagas</h3>
-    <div id="mensagem-vagas-empresa" class="mensagem"></div>
-    <div id="vagas-empresa"></div>
-
-  </div>
-
-</div>
-
-<!-- CANDIDATO -->
-<div id="secao-candidato" style="display:none">
-
-  <h2>Área do Candidato</h2>
-
-  <div id="candidato-auth">
-    <input id="cand-nome-cadastro" placeholder="Seu nome">
-    <input id="cand-email" placeholder="Email">
-    <input id="cand-senha" type="password" placeholder="Senha">
-
-    <button class="acao-empresa" onclick="cadastrarCandidato()">Cadastrar</button>
-    <button class="acao-candidato" onclick="loginCandidato()">Entrar</button>
-
-    <div id="mensagem-candidato-auth" class="mensagem"></div>
-  </div>
-
-  <div id="candidato-logado-box" class="oculto">
-    <p><strong>Logado como:</strong> <span id="candidato-logado-nome"></span></p>
-    <button class="acao-alerta" onclick="logoutCandidato()">Sair</button>
-  </div>
-
-  <div id="candidato-painel" class="oculto">
-    <h3>Minhas candidaturas</h3>
-    <div id="minhas-candidaturas"></div>
-  </div>
-
-</div>
-
-<!-- MODAL CANDIDATURA -->
-<div id="modal-candidatura-fundo">
-  <div class="modal-box">
-    <h3>Candidatar-se</h3>
-
-    <input id="cand-nome" placeholder="Nome">
-    <input id="cand-whatsapp" placeholder="WhatsApp">
-    <textarea id="cand-experiencia" placeholder="Experiência"></textarea>
-
-    <button class="acao-empresa" onclick="enviarCandidatura()">Enviar</button>
-    <button class="acao-alerta" onclick="fecharModalCandidatura()">Fechar</button>
-
-    <div id="mensagem-candidatura" class="mensagem"></div>
-  </div>
-</div>
-
-<!-- MODAL CANDIDATOS DA EMPRESA -->
-<div id="modal-candidatos-fundo">
-  <div class="modal-box">
-    <h3>Candidatos da vaga</h3>
-    <div id="lista-candidatos"></div>
-    <div id="mensagem-candidatos" class="mensagem"></div>
-    <button class="acao-alerta" onclick="fecharModalCandidatos()">Fechar</button>
-  </div>
 </div>
 
 <script type="module" src="script.js"></script>
-
 </body>
 </html>

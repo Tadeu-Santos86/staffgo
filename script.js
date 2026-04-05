@@ -13,13 +13,11 @@ const vagas = [
 
 function mostrarVagas() {
   const container = document.getElementById("vagas");
+  container.innerHTML = "";
 
   vagas.forEach(vaga => {
     const div = document.createElement("div");
-    div.style.margin = "20px";
-    div.style.padding = "20px";
-    div.style.background = "#1e293b";
-    div.style.borderRadius = "10px";
+    div.className = "vaga";
 
     div.innerHTML = `
       <h3>${vaga.titulo}</h3>
@@ -36,5 +34,5 @@ function mostrarVagas() {
 function compartilhar(titulo) {
   const texto = `Olha essa vaga: ${titulo} - StaffGo`;
   navigator.clipboard.writeText(texto);
-  alert("Link copiado! Compartilhe e ganhe acesso");
+  alert("Link copiado! Compartilhe essa vaga");
 }

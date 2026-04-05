@@ -44,7 +44,7 @@
     }
 
     .secao {
-      max-width: 700px;
+      max-width: 800px;
       margin: 0 auto 30px auto;
       background: #1e293b;
       border-radius: 12px;
@@ -114,6 +114,36 @@
       color: #cbd5e1;
       margin-top: 15px;
     }
+
+    .modal-fundo {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 999;
+      padding: 20px;
+      box-sizing: border-box;
+      overflow-y: auto;
+    }
+
+    .modal {
+      max-width: 600px;
+      margin: 40px auto;
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: left;
+    }
+
+    .modal h2 {
+      text-align: center;
+      margin-top: 0;
+    }
+
+    .fechar {
+      background: #ef4444;
+      color: white;
+    }
   </style>
 </head>
 <body>
@@ -155,6 +185,26 @@
 
     <button onclick="cadastrarVaga()">Salvar vaga</button>
     <div id="mensagem-empresa" class="mensagem"></div>
+  </div>
+
+  <div id="modal-candidatura-fundo" class="modal-fundo">
+    <div class="modal">
+      <h2>Candidatar-se à vaga</h2>
+
+      <label for="cand-nome">Nome</label>
+      <input type="text" id="cand-nome" placeholder="Seu nome completo">
+
+      <label for="cand-whatsapp">WhatsApp</label>
+      <input type="text" id="cand-whatsapp" placeholder="Ex: 11999999999">
+
+      <label for="cand-experiencia">Experiência</label>
+      <textarea id="cand-experiencia" placeholder="Ex: Trabalhei 2 anos em hotelaria"></textarea>
+
+      <button onclick="enviarCandidatura()">Enviar candidatura</button>
+      <button class="fechar" onclick="fecharModalCandidatura()">Fechar</button>
+
+      <div id="mensagem-candidatura" class="mensagem"></div>
+    </div>
   </div>
 
   <script type="module" src="script.js"></script>

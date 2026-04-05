@@ -37,6 +37,7 @@ let vagaSelecionada = null;
 let usuarioAtual = null;
 let tipoUsuario = null;
 let nomeEmpresaAtual = "";
+let todasAsVagas = [];
 
 window.abrirSecao = abrirSecao;
 window.cadastrarEmpresa = cadastrarEmpresa;
@@ -52,6 +53,8 @@ window.enviarCandidatura = enviarCandidatura;
 window.verCandidatosDaVaga = verCandidatosDaVaga;
 window.fecharModalCandidatos = fecharModalCandidatos;
 window.atualizarStatusCandidatura = atualizarStatusCandidatura;
+window.aplicarFiltrosVagas = aplicarFiltrosVagas;
+window.limparFiltrosVagas = limparFiltrosVagas;
 
 onAuthStateChanged(auth, async (user) => {
   if (user) {
@@ -275,40 +278,80 @@ async function carregarVagas() {
   try {
     const snapshot = await getDocs(query(collection(db, "Vagas"), orderBy("Data", "desc")));
 
-    if (snapshot.empty) {
-      mensagem.innerHTML = "Nenhuma vaga cadastrada.";
-      return;
-    }
-
-    mensagem.innerHTML = "";
+    todasAsVagas = [];
 
     snapshot.forEach((docItem) => {
-      const vaga = docItem.data();
-
-      const titulo = vaga.Titulo || "";
-      const empresa = vaga.Empresa || "";
-      const cidade = vaga.Cidade || "";
-      const salario = vaga.Salario || "";
-      const descricao = vaga.Descrição || "";
-
-      const div = document.createElement("div");
-      div.className = "vaga";
-
-      div.innerHTML = `
-        <h3>${titulo}</h3>
-        <p><strong>Empresa:</strong> ${empresa}</p>
-        <p><strong>Cidade:</strong> ${cidade}</p>
-        <p><strong>Salário:</strong> ${salario}</p>
-        <p><strong>Descrição:</strong> ${descricao}</p>
-        <button class="acao-candidato" onclick="abrirModalCandidatura('${escapeTexto(titulo)}','${escapeTexto(empresa)}','${escapeTexto(cidade)}')">Candidatar-se</button>
-      `;
-
-      container.appendChild(div);
+      todasAsVagas.push({
+        id: docItem.id,
+        ...docItem.data()
+      });
     });
+
+    renderizarVagasFiltradas();
+
   } catch (erro) {
     console.error("Erro ao carregar vagas:", erro);
     mensagem.innerHTML = "Erro ao carregar vagas.";
   }
+}
+
+function renderizarVagasFiltradas() {
+  const container = document.getElementById("vagas");
+  const mensagem = document.getElementById("mensagem-vagas");
+
+  const filtroTitulo = (document.getElementById("filtro-titulo").value || "").trim().toLowerCase();
+  const filtroCidade = (document.getElementById("filtro-cidade").value || "").trim().toLowerCase();
+
+  container.innerHTML = "";
+
+  const vagasFiltradas = todasAsVagas.filter((vaga) => {
+    const titulo = String(vaga.Titulo || "").toLowerCase();
+    const cidade = String(vaga.Cidade || "").toLowerCase();
+
+    const atendeTitulo = !filtroTitulo || titulo.includes(filtroTitulo);
+    const atendeCidade = !filtroCidade || cidade.includes(filtroCidade);
+
+    return atendeTitulo && atendeCidade;
+  });
+
+  if (vagasFiltradas.length === 0) {
+    mensagem.innerHTML = "Nenhuma vaga encontrada com esse filtro.";
+    return;
+  }
+
+  mensagem.innerHTML = `${vagasFiltradas.length} vaga(s) encontrada(s).`;
+
+  vagasFiltradas.forEach((vaga) => {
+    const titulo = vaga.Titulo || "";
+    const empresa = vaga.Empresa || "";
+    const cidade = vaga.Cidade || "";
+    const salario = vaga.Salario || "";
+    const descricao = vaga.Descrição || "";
+
+    const div = document.createElement("div");
+    div.className = "vaga";
+
+    div.innerHTML = `
+      <h3>${titulo}</h3>
+      <p><strong>Empresa:</strong> ${empresa}</p>
+      <p><strong>Cidade:</strong> ${cidade}</p>
+      <p><strong>Salário:</strong> ${salario}</p>
+      <p><strong>Descrição:</strong> ${descricao}</p>
+      <button class="acao-candidato" onclick="abrirModalCandidatura('${escapeTexto(titulo)}','${escapeTexto(empresa)}','${escapeTexto(cidade)}')">Candidatar-se</button>
+    `;
+
+    container.appendChild(div);
+  });
+}
+
+function aplicarFiltrosVagas() {
+  renderizarVagasFiltradas();
+}
+
+function limparFiltrosVagas() {
+  document.getElementById("filtro-titulo").value = "";
+  document.getElementById("filtro-cidade").value = "";
+  renderizarVagasFiltradas();
 }
 
 async function carregarVagasEmpresa() {

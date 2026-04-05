@@ -12,21 +12,27 @@
       background: #0f172a;
       color: white;
       text-align: center;
-      padding-top: 100px;
+      padding: 60px 20px;
     }
 
     h1 {
       font-size: 48px;
       color: #22c55e;
+      margin-bottom: 10px;
     }
 
     p {
       font-size: 20px;
       color: #94a3b8;
+      margin-bottom: 30px;
+    }
+
+    .botoes {
+      margin-bottom: 30px;
     }
 
     button {
-      margin-top: 20px;
+      margin: 8px;
       padding: 12px 24px;
       border: none;
       background: #22c55e;
@@ -34,30 +40,87 @@
       font-size: 16px;
       border-radius: 8px;
       cursor: pointer;
+      font-weight: bold;
+    }
+
+    .secao {
+      max-width: 700px;
+      margin: 0 auto 30px auto;
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 20px;
+      display: none;
+      text-align: left;
+    }
+
+    .secao h2 {
+      text-align: center;
+      margin-top: 0;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0 16px 0;
+      border-radius: 8px;
+      border: none;
+      font-size: 15px;
+      box-sizing: border-box;
     }
 
     .vaga {
-      margin: 20px auto;
-      padding: 20px;
-      background: #1e293b;
+      margin-top: 15px;
+      padding: 18px;
+      background: #334155;
       border-radius: 10px;
-      width: 300px;
+    }
+
+    .vaga h3 {
+      margin: 0 0 8px 0;
+      color: #22c55e;
+    }
+
+    .vaga p {
+      margin: 4px 0;
+      font-size: 16px;
+      color: #e2e8f0;
+    }
+
+    .acoes-vaga {
+      margin-top: 12px;
     }
   </style>
 </head>
-
 <body>
 
   <h1>StaffGo 🚀</h1>
   <p>Conectando empresas e profissionais</p>
 
-  <button onclick="mostrarVagas()">
-    Ver vagas
-  </button>
+  <div class="botoes">
+    <button onclick="abrirSecao('secao-vagas')">Ver vagas</button>
+    <button onclick="abrirSecao('secao-empresa')">Sou empresa</button>
+  </div>
 
-  <div id="vagas"></div>
+  <div id="secao-vagas" class="secao">
+    <h2>Vagas disponíveis</h2>
+    <div id="vagas"></div>
+  </div>
+
+  <div id="secao-empresa" class="secao">
+    <h2>Cadastrar nova vaga</h2>
+
+    <label for="titulo">Título da vaga</label>
+    <input type="text" id="titulo" placeholder="Ex: Recepcionista de Hotel">
+
+    <label for="empresa">Empresa</label>
+    <input type="text" id="empresa" placeholder="Ex: Resort Luxo SP">
+
+    <label for="local">Local</label>
+    <input type="text" id="local" placeholder="Ex: São Paulo">
+
+    <button onclick="cadastrarVaga()">Salvar vaga</button>
+  </div>
 
   <script src="script.js"></script>
-
 </body>
 </html>

@@ -8,7 +8,9 @@ import {
   orderBy,
   doc,
   deleteDoc,
-  updateDoc
+  updateDoc,
+  setDoc,
+  getDoc
 } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
 import {
@@ -54,9 +56,10 @@ window.cadastrarEmpresa = cadastrarEmpresa;
 window.loginEmpresa = loginEmpresa;
 window.logoutEmpresa = logoutEmpresa;
 
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
   if (user) {
     usuarioEmpresaAtual = user;
+    await carregarDadosEmpresa(user.uid);
     aplicarEstadoEmpresaLogada();
   } else {
     usuarioEmpresaAtual = null;
@@ -64,6 +67,23 @@ onAuthStateChanged(auth, (user) => {
     aplicarEstadoDeslogado();
   }
 });
+
+async function carregarDadosEmpresa(uid) {
+  try {
+    const empresaRef = doc(db, "Empresas", uid);
+    const empresaSnap = await getDoc(empresaRef);
+
+    if (empresaSnap.exists()) {
+      const dados = empresaSnap.data();
+      nomeEmpresaAtual = dados.Nome || "";
+    } else {
+      nomeEmpresaAtual = "";
+    }
+  } catch (erro) {
+    console.error("Erro ao carregar dados da empresa:", erro);
+    nomeEmpresaAtual = "";
+  }
+}
 
 function abrirSecao(id) {
   document.getElementById("secao-vagas").style.display = "none";
@@ -85,11 +105,6 @@ function abrirSecao(id) {
 }
 
 function aplicarEstadoEmpresaLogada() {
-  const nomeSalvo = localStorage.getItem("staffgo_empresa_nome") || "";
-  if (nomeSalvo) {
-    nomeEmpresaAtual = nomeSalvo;
-  }
-
   document.getElementById("empresa-auth").classList.add("oculto");
   document.getElementById("empresa-logada-box").classList.remove("oculto");
   document.getElementById("empresa-painel-conteudo").classList.remove("oculto");
@@ -97,9 +112,7 @@ function aplicarEstadoEmpresaLogada() {
   document.getElementById("empresa-logada-email").textContent = usuarioEmpresaAtual?.email || "-";
   document.getElementById("empresa-logada-nome").textContent = nomeEmpresaAtual || "Empresa";
 
-  if (!document.getElementById("empresa").value) {
-    document.getElementById("empresa").value = nomeEmpresaAtual || "";
-  }
+  document.getElementById("empresa").value = nomeEmpresaAtual || "";
 
   carregarVagasEmpresa();
 }
@@ -125,8 +138,15 @@ async function cadastrarEmpresa() {
   mensagem.innerHTML = "Cadastrando empresa...";
 
   try {
-    await createUserWithEmailAndPassword(auth, email, senha);
-    localStorage.setItem("staffgo_empresa_nome", nome);
+    const credencial = await createUserWithEmailAndPassword(auth, email, senha);
+
+    await setDoc(doc(db, "Empresas", credencial.user.uid), {
+      Nome: nome,
+      Email: email,
+      EmpresaId: credencial.user.uid,
+      Data: new Date()
+    });
+
     nomeEmpresaAtual = nome;
     mensagem.innerHTML = "Empresa cadastrada com sucesso.";
     limparCamposAuth();
@@ -139,7 +159,6 @@ async function cadastrarEmpresa() {
 async function loginEmpresa() {
   const email = document.getElementById("empresa-email").value.trim();
   const senha = document.getElementById("empresa-senha").value.trim();
-  const nome = document.getElementById("empresa-nome-cadastro").value.trim();
   const mensagem = document.getElementById("mensagem-auth");
 
   if (!email || !senha) {
@@ -150,11 +169,8 @@ async function loginEmpresa() {
   mensagem.innerHTML = "Entrando...";
 
   try {
-    await signInWithEmailAndPassword(auth, email, senha);
-    if (nome) {
-      localStorage.setItem("staffgo_empresa_nome", nome);
-      nomeEmpresaAtual = nome;
-    }
+    const credencial = await signInWithEmailAndPassword(auth, email, senha);
+    await carregarDadosEmpresa(credencial.user.uid);
     mensagem.innerHTML = "Login realizado com sucesso.";
     limparCamposAuth();
   } catch (erro) {
@@ -340,7 +356,8 @@ async function salvarOuAtualizarVaga() {
         Descrição: descricao,
         Data: new Date(),
         EmpresaId: usuarioEmpresaAtual.uid,
-        EmpresaEmail: usuarioEmpresaAtual.email || ""
+        EmpresaEmail: usuarioEmpresaAtual.email || "",
+        EmpresaNome: nomeEmpresaAtual || empresa
       });
 
       mensagem.innerHTML = "Vaga atualizada com sucesso.";
@@ -354,7 +371,8 @@ async function salvarOuAtualizarVaga() {
         Descrição: descricao,
         Data: new Date(),
         EmpresaId: usuarioEmpresaAtual.uid,
-        EmpresaEmail: usuarioEmpresaAtual.email || ""
+        EmpresaEmail: usuarioEmpresaAtual.email || "",
+        EmpresaNome: nomeEmpresaAtual || empresa
       });
 
       mensagem.innerHTML = "Vaga cadastrada com sucesso.";

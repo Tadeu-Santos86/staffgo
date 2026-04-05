@@ -43,8 +43,18 @@
       font-weight: bold;
     }
 
+    .botao-secundario {
+      background: #38bdf8;
+      color: #0f172a;
+    }
+
+    .botao-alerta {
+      background: #ef4444;
+      color: white;
+    }
+
     .secao {
-      max-width: 800px;
+      max-width: 900px;
       margin: 0 auto 30px auto;
       background: #1e293b;
       border-radius: 12px;
@@ -82,25 +92,25 @@
       resize: vertical;
     }
 
-    .vaga {
+    .vaga, .candidato {
       margin-top: 15px;
       padding: 18px;
       background: #334155;
       border-radius: 10px;
     }
 
-    .vaga h3 {
+    .vaga h3, .candidato h3 {
       margin: 0 0 8px 0;
       color: #22c55e;
     }
 
-    .vaga p {
+    .vaga p, .candidato p {
       margin: 4px 0;
       font-size: 16px;
       color: #e2e8f0;
     }
 
-    .acoes-vaga {
+    .acoes-vaga, .acoes-candidato {
       margin-top: 12px;
     }
 
@@ -127,7 +137,7 @@
     }
 
     .modal {
-      max-width: 600px;
+      max-width: 700px;
       margin: 40px auto;
       background: #1e293b;
       border-radius: 12px;
@@ -143,6 +153,12 @@
     .fechar {
       background: #ef4444;
       color: white;
+    }
+
+    .subtitulo {
+      color: #94a3b8;
+      text-align: center;
+      margin-bottom: 20px;
     }
   </style>
 </head>
@@ -166,7 +182,8 @@
   </div>
 
   <div id="secao-empresa" class="secao">
-    <h2>Cadastrar nova vaga</h2>
+    <h2>Painel da empresa</h2>
+    <p class="subtitulo">Cadastre, edite, exclua vagas e veja os candidatos</p>
 
     <label for="titulo">Título da vaga</label>
     <input type="text" id="titulo" placeholder="Ex: Recepcionista de Hotel">
@@ -183,8 +200,19 @@
     <label for="descricao">Descrição</label>
     <textarea id="descricao" placeholder="Ex: Atendimento ao cliente, check-in e suporte"></textarea>
 
-    <button onclick="cadastrarVaga()">Salvar vaga</button>
+    <button onclick="salvarOuAtualizarVaga()">Salvar vaga</button>
+    <button class="botao-secundario" onclick="limparFormularioVaga()">Limpar formulário</button>
+
     <div id="mensagem-empresa" class="mensagem"></div>
+
+    <hr style="margin:30px 0; border-color:#475569;">
+
+    <h2>Minhas vagas</h2>
+    <div class="topo-acoes">
+      <button onclick="carregarVagasEmpresa()">Atualizar minhas vagas</button>
+    </div>
+    <div id="vagas-empresa"></div>
+    <div id="mensagem-vagas-empresa" class="mensagem"></div>
   </div>
 
   <div id="modal-candidatura-fundo" class="modal-fundo">
@@ -204,6 +232,15 @@
       <button class="fechar" onclick="fecharModalCandidatura()">Fechar</button>
 
       <div id="mensagem-candidatura" class="mensagem"></div>
+    </div>
+  </div>
+
+  <div id="modal-candidatos-fundo" class="modal-fundo">
+    <div class="modal">
+      <h2>Candidatos da vaga</h2>
+      <div id="lista-candidatos"></div>
+      <div id="mensagem-candidatos" class="mensagem"></div>
+      <button class="fechar" onclick="fecharModalCandidatos()">Fechar</button>
     </div>
   </div>
 

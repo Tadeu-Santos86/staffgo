@@ -54,7 +54,7 @@
     }
 
     .secao {
-      max-width: 900px;
+      max-width: 950px;
       margin: 0 auto 30px auto;
       background: #1e293b;
       border-radius: 12px;
@@ -92,7 +92,7 @@
       resize: vertical;
     }
 
-    .vaga, .candidato {
+    .vaga, .candidato, .auth-box {
       margin-top: 15px;
       padding: 18px;
       background: #334155;
@@ -104,7 +104,7 @@
       color: #22c55e;
     }
 
-    .vaga p, .candidato p {
+    .vaga p, .candidato p, .auth-box p {
       margin: 4px 0;
       font-size: 16px;
       color: #e2e8f0;
@@ -123,6 +123,7 @@
       text-align: center;
       color: #cbd5e1;
       margin-top: 15px;
+      font-size: 15px;
     }
 
     .modal-fundo {
@@ -160,6 +161,15 @@
       text-align: center;
       margin-bottom: 20px;
     }
+
+    .linha {
+      border-top: 1px solid #475569;
+      margin: 30px 0;
+    }
+
+    .oculto {
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -183,36 +193,67 @@
 
   <div id="secao-empresa" class="secao">
     <h2>Painel da empresa</h2>
-    <p class="subtitulo">Cadastre, edite, exclua vagas e veja os candidatos</p>
+    <p class="subtitulo">Cadastro, login, vagas e candidatos</p>
 
-    <label for="titulo">Título da vaga</label>
-    <input type="text" id="titulo" placeholder="Ex: Recepcionista de Hotel">
+    <div id="empresa-auth" class="auth-box">
+      <h2>Acesso da empresa</h2>
 
-    <label for="empresa">Empresa</label>
-    <input type="text" id="empresa" placeholder="Ex: Resort Luxo SP">
+      <label for="empresa-nome-cadastro">Nome da empresa</label>
+      <input type="text" id="empresa-nome-cadastro" placeholder="Ex: Hotel Modelo">
 
-    <label for="cidade">Cidade</label>
-    <input type="text" id="cidade" placeholder="Ex: São Paulo">
+      <label for="empresa-email">E-mail</label>
+      <input type="email" id="empresa-email" placeholder="Ex: contato@empresa.com">
 
-    <label for="salario">Salário</label>
-    <input type="text" id="salario" placeholder="Ex: R$ 2.000">
+      <label for="empresa-senha">Senha</label>
+      <input type="password" id="empresa-senha" placeholder="Digite sua senha">
 
-    <label for="descricao">Descrição</label>
-    <textarea id="descricao" placeholder="Ex: Atendimento ao cliente, check-in e suporte"></textarea>
+      <button onclick="cadastrarEmpresa()">Cadastrar empresa</button>
+      <button class="botao-secundario" onclick="loginEmpresa()">Entrar</button>
 
-    <button onclick="salvarOuAtualizarVaga()">Salvar vaga</button>
-    <button class="botao-secundario" onclick="limparFormularioVaga()">Limpar formulário</button>
-
-    <div id="mensagem-empresa" class="mensagem"></div>
-
-    <hr style="margin:30px 0; border-color:#475569;">
-
-    <h2>Minhas vagas</h2>
-    <div class="topo-acoes">
-      <button onclick="carregarVagasEmpresa()">Atualizar minhas vagas</button>
+      <div id="mensagem-auth" class="mensagem"></div>
     </div>
-    <div id="vagas-empresa"></div>
-    <div id="mensagem-vagas-empresa" class="mensagem"></div>
+
+    <div id="empresa-logada-box" class="auth-box oculto">
+      <h2>Empresa logada</h2>
+      <p><strong>Empresa:</strong> <span id="empresa-logada-nome">-</span></p>
+      <p><strong>E-mail:</strong> <span id="empresa-logada-email">-</span></p>
+      <div class="topo-acoes">
+        <button class="botao-alerta" onclick="logoutEmpresa()">Sair</button>
+      </div>
+    </div>
+
+    <div id="empresa-painel-conteudo" class="oculto">
+      <div class="linha"></div>
+
+      <label for="titulo">Título da vaga</label>
+      <input type="text" id="titulo" placeholder="Ex: Recepcionista de Hotel">
+
+      <label for="empresa">Empresa</label>
+      <input type="text" id="empresa" placeholder="Ex: Resort Luxo SP">
+
+      <label for="cidade">Cidade</label>
+      <input type="text" id="cidade" placeholder="Ex: São Paulo">
+
+      <label for="salario">Salário</label>
+      <input type="text" id="salario" placeholder="Ex: R$ 2.000">
+
+      <label for="descricao">Descrição</label>
+      <textarea id="descricao" placeholder="Ex: Atendimento ao cliente, check-in e suporte"></textarea>
+
+      <button onclick="salvarOuAtualizarVaga()">Salvar vaga</button>
+      <button class="botao-secundario" onclick="limparFormularioVaga()">Limpar formulário</button>
+
+      <div id="mensagem-empresa" class="mensagem"></div>
+
+      <div class="linha"></div>
+
+      <h2>Minhas vagas</h2>
+      <div class="topo-acoes">
+        <button onclick="carregarVagasEmpresa()">Atualizar minhas vagas</button>
+      </div>
+      <div id="vagas-empresa"></div>
+      <div id="mensagem-vagas-empresa" class="mensagem"></div>
+    </div>
   </div>
 
   <div id="modal-candidatura-fundo" class="modal-fundo">

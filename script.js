@@ -124,54 +124,226 @@ function resetarInterfaces() {
   document.getElementById("candidato-painel").classList.add("oculto");
 }
 
-async function carregarVagas() {
-  const snapshot = await getDocs(query(collection(db, "Vagas"), orderBy("Data", "desc")));
+async function cadastrarEmpresa() {
+  const nome = document.getElementById("empresa-nome-cadastro").value.trim();
+  const email = document.getElementById("empresa-email").value.trim();
+  const senha = document.getElementById("empresa-senha").value.trim();
 
-  todasAsVagas = [];
+  if (!nome || !email || !senha) {
+    alert("Preencha nome, e-mail e senha.");
+    return;
+  }
 
-  snapshot.forEach((docItem) => {
-    todasAsVagas.push({
-      id: docItem.id,
-      ...docItem.data()
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, email, senha);
+
+    await setDoc(doc(db, "Empresas", cred.user.uid), {
+      Nome: nome,
+      Email: email
     });
-  });
 
-  renderizarVagasFiltradas();
+    document.getElementById("mensagem-auth").innerHTML = "Empresa cadastrada com sucesso.";
+  } catch (erro) {
+    console.error("Erro ao cadastrar empresa:", erro);
+    alert("Erro ao cadastrar empresa.");
+  }
+}
+
+async function loginEmpresa() {
+  const email = document.getElementById("empresa-email").value.trim();
+  const senha = document.getElementById("empresa-senha").value.trim();
+
+  if (!email || !senha) {
+    alert("Preencha e-mail e senha.");
+    return;
+  }
+
+  try {
+    await signInWithEmailAndPassword(auth, email, senha);
+    document.getElementById("mensagem-auth").innerHTML = "Login realizado com sucesso.";
+  } catch (erro) {
+    console.error("Erro ao entrar:", erro);
+    alert("Erro ao entrar.");
+  }
+}
+
+async function logoutEmpresa() {
+  try {
+    await signOut(auth);
+  } catch (erro) {
+    console.error("Erro ao sair:", erro);
+    alert("Erro ao sair.");
+  }
+}
+
+async function cadastrarCandidato() {
+  const nome = document.getElementById("cand-nome-cadastro").value.trim();
+  const email = document.getElementById("cand-email").value.trim();
+  const senha = document.getElementById("cand-senha").value.trim();
+
+  if (!nome || !email || !senha) {
+    alert("Preencha nome, e-mail e senha.");
+    return;
+  }
+
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, email, senha);
+
+    await setDoc(doc(db, "Usuarios", cred.user.uid), {
+      Nome: nome,
+      Email: email
+    });
+
+    document.getElementById("mensagem-candidato-auth").innerHTML = "Candidato cadastrado com sucesso.";
+  } catch (erro) {
+    console.error("Erro ao cadastrar candidato:", erro);
+    alert("Erro ao cadastrar candidato.");
+  }
+}
+
+async function loginCandidato() {
+  const email = document.getElementById("cand-email").value.trim();
+  const senha = document.getElementById("cand-senha").value.trim();
+
+  if (!email || !senha) {
+    alert("Preencha e-mail e senha.");
+    return;
+  }
+
+  try {
+    await signInWithEmailAndPassword(auth, email, senha);
+    document.getElementById("mensagem-candidato-auth").innerHTML = "Login realizado com sucesso.";
+  } catch (erro) {
+    console.error("Erro ao entrar como candidato:", erro);
+    alert("Erro ao entrar como candidato.");
+  }
+}
+
+async function logoutCandidato() {
+  try {
+    await signOut(auth);
+  } catch (erro) {
+    console.error("Erro ao sair:", erro);
+    alert("Erro ao sair.");
+  }
+}
+
+async function salvarOuAtualizarVaga() {
+  if (!usuarioAtual || tipoUsuario !== "empresa") {
+    alert("Faça login como empresa.");
+    return;
+  }
+
+  const titulo = document.getElementById("titulo").value.trim();
+  const empresa = document.getElementById("empresa").value.trim();
+  const cidade = document.getElementById("cidade").value.trim();
+  const salario = document.getElementById("salario").value.trim();
+  const descricao = document.getElementById("descricao").value.trim();
+
+  if (!titulo || !empresa || !cidade || !salario || !descricao) {
+    alert("Preencha todos os campos da vaga.");
+    return;
+  }
+
+  try {
+    await addDoc(collection(db, "Vagas"), {
+      Titulo: titulo,
+      Empresa: empresa,
+      Cidade: cidade,
+      Salario: salario,
+      Descrição: descricao,
+      EmpresaId: usuarioAtual.uid,
+      EmpresaNome: nomeEmpresaAtual,
+      Data: new Date()
+    });
+
+    document.getElementById("mensagem-empresa").innerHTML = "Vaga cadastrada com sucesso.";
+    document.getElementById("titulo").value = "";
+    document.getElementById("cidade").value = "";
+    document.getElementById("salario").value = "";
+    document.getElementById("descricao").value = "";
+
+    carregarVagasEmpresa();
+    carregarVagas();
+  } catch (erro) {
+    console.error("Erro ao salvar vaga:", erro);
+    alert("Erro ao salvar vaga.");
+  }
+}
+
+async function carregarVagas() {
+  const mensagem = document.getElementById("mensagem-vagas");
+  if (mensagem) mensagem.innerHTML = "Carregando vagas...";
+
+  try {
+    const snapshot = await getDocs(query(collection(db, "Vagas"), orderBy("Data", "desc")));
+
+    todasAsVagas = [];
+
+    snapshot.forEach((docItem) => {
+      todasAsVagas.push({
+        id: docItem.id,
+        ...docItem.data()
+      });
+    });
+
+    renderizarVagasFiltradas();
+  } catch (erro) {
+    console.error("Erro ao carregar vagas:", erro);
+    if (mensagem) mensagem.innerHTML = "Erro ao carregar vagas.";
+  }
 }
 
 function renderizarVagasFiltradas() {
   const container = document.getElementById("vagas");
+  const mensagem = document.getElementById("mensagem-vagas");
 
-  const filtroTitulo = (document.getElementById("filtro-titulo").value || "").toLowerCase();
-  const filtroCidade = (document.getElementById("filtro-cidade").value || "").toLowerCase();
+  const filtroTitulo = (document.getElementById("filtro-titulo")?.value || "").trim().toLowerCase();
+  const filtroCidade = (document.getElementById("filtro-cidade")?.value || "").trim().toLowerCase();
 
   container.innerHTML = "";
 
   const vagasFiltradas = todasAsVagas.filter((vaga) => {
-    return (
-      (!filtroTitulo || (vaga.Titulo || "").toLowerCase().includes(filtroTitulo)) &&
-      (!filtroCidade || (vaga.Cidade || "").toLowerCase().includes(filtroCidade))
-    );
+    const titulo = String(vaga.Titulo || "").toLowerCase();
+    const cidade = String(vaga.Cidade || "").toLowerCase();
+
+    const atendeTitulo = !filtroTitulo || titulo.includes(filtroTitulo);
+    const atendeCidade = !filtroCidade || cidade.includes(filtroCidade);
+
+    return atendeTitulo && atendeCidade;
   });
+
+  if (vagasFiltradas.length === 0) {
+    if (mensagem) mensagem.innerHTML = "Nenhuma vaga encontrada com esse filtro.";
+    return;
+  }
+
+  if (mensagem) mensagem.innerHTML = `${vagasFiltradas.length} vaga(s) encontrada(s).`;
 
   vagasFiltradas.forEach((vaga) => {
     const div = document.createElement("div");
     div.className = "vaga";
 
+    const titulo = vaga.Titulo || "";
+    const empresa = vaga.Empresa || "";
+    const cidade = vaga.Cidade || "";
+    const salario = vaga.Salario || "";
+    const descricao = vaga.Descrição || "";
+
     div.innerHTML = `
-      <h3>${vaga.Titulo}</h3>
-      <p><strong>Empresa:</strong> ${vaga.Empresa}</p>
-      <p><strong>Cidade:</strong> ${vaga.Cidade}</p>
-      <p><strong>Salário:</strong> ${vaga.Salario}</p>
-      <p>${vaga.Descrição}</p>
+      <h3>${titulo}</h3>
+      <p><strong>Empresa:</strong> ${empresa}</p>
+      <p><strong>Cidade:</strong> ${cidade}</p>
+      <p><strong>Salário:</strong> ${salario}</p>
+      <p><strong>Descrição:</strong> ${descricao}</p>
 
       <button class="acao-candidato"
-        onclick="verificarAcesso('${encodeURIComponent(vaga.Titulo)}','${encodeURIComponent(vaga.Empresa)}','${encodeURIComponent(vaga.Cidade)}')">
+        onclick="verificarAcesso('${encodeURIComponent(titulo)}','${encodeURIComponent(empresa)}','${encodeURIComponent(cidade)}')">
         Candidatar-se
       </button>
 
       <button class="acao-neutra"
-        onclick="compartilharVaga('${encodeURIComponent(vaga.Titulo)}')">
+        onclick="compartilharVaga('${encodeURIComponent(titulo)}')">
         Compartilhar
       </button>
     `;
@@ -209,5 +381,267 @@ function compartilharVaga(titulo) {
   navigator.clipboard.writeText(url).then(() => {
     acessoLiberado = true;
     alert("Link copiado! Agora você pode se candidatar.");
+  }).catch(() => {
+    acessoLiberado = true;
+    alert("Não consegui copiar automaticamente, mas a candidatura foi liberada.");
   });
 }
+
+async function carregarVagasEmpresa() {
+  const container = document.getElementById("vagas-empresa");
+  const mensagem = document.getElementById("mensagem-vagas-empresa");
+
+  container.innerHTML = "";
+  mensagem.innerHTML = "Carregando vagas da empresa...";
+
+  if (!usuarioAtual || tipoUsuario !== "empresa") {
+    mensagem.innerHTML = "Faça login como empresa.";
+    return;
+  }
+
+  try {
+    const snapshot = await getDocs(query(collection(db, "Vagas"), orderBy("Data", "desc")));
+
+    let encontrou = false;
+    container.innerHTML = "";
+
+    snapshot.forEach((docItem) => {
+      const vaga = docItem.data();
+
+      if ((vaga.EmpresaId || "") !== usuarioAtual.uid) return;
+
+      encontrou = true;
+
+      const titulo = vaga.Titulo || "";
+      const cidade = vaga.Cidade || "";
+      const salario = vaga.Salario || "";
+
+      const div = document.createElement("div");
+      div.className = "vaga";
+
+      div.innerHTML = `
+        <h3>${titulo}</h3>
+        <p><strong>Cidade:</strong> ${cidade}</p>
+        <p><strong>Salário:</strong> ${salario}</p>
+        <button class="acao-candidato" onclick="verCandidatosDaVaga('${escapeTexto(titulo)}')">Ver candidatos</button>
+      `;
+
+      container.appendChild(div);
+    });
+
+    mensagem.innerHTML = encontrou ? "" : "Nenhuma vaga sua cadastrada.";
+  } catch (erro) {
+    console.error("Erro ao carregar vagas da empresa:", erro);
+    mensagem.innerHTML = "Erro ao carregar vagas da empresa.";
+  }
+}
+
+function abrirModalCandidatura(titulo, empresa, cidade) {
+  vagaSelecionada = { titulo, empresa, cidade };
+  document.getElementById("cand-nome").value = "";
+  document.getElementById("cand-whatsapp").value = "";
+  document.getElementById("cand-experiencia").value = "";
+  document.getElementById("mensagem-candidatura").innerHTML = "";
+  document.getElementById("modal-candidatura-fundo").style.display = "block";
+}
+
+function fecharModalCandidatura() {
+  document.getElementById("modal-candidatura-fundo").style.display = "none";
+}
+
+async function enviarCandidatura() {
+  if (!usuarioAtual || tipoUsuario !== "candidato") {
+    alert("Faça login como candidato antes de se candidatar.");
+    return;
+  }
+
+  const nome = document.getElementById("cand-nome").value.trim();
+  const whatsapp = document.getElementById("cand-whatsapp").value.trim();
+  const experiencia = document.getElementById("cand-experiencia").value.trim();
+
+  if (!nome || !whatsapp || !experiencia) {
+    alert("Preencha todos os campos da candidatura.");
+    return;
+  }
+
+  if (!vagaSelecionada) {
+    alert("Nenhuma vaga selecionada.");
+    return;
+  }
+
+  try {
+    await addDoc(collection(db, "Candidatos"), {
+      Nome: nome,
+      WhatsApp: whatsapp,
+      Experiencia: experiencia,
+      UsuarioId: usuarioAtual.uid,
+      Vaga: vagaSelecionada.titulo,
+      Empresa: vagaSelecionada.empresa,
+      Cidade: vagaSelecionada.cidade,
+      Status: "Enviado",
+      Data: new Date()
+    });
+
+    document.getElementById("mensagem-candidatura").innerHTML = "Candidatura enviada com sucesso.";
+    carregarMinhasCandidaturas();
+
+    setTimeout(() => {
+      fecharModalCandidatura();
+    }, 1000);
+  } catch (erro) {
+    console.error("Erro ao enviar candidatura:", erro);
+    alert("Erro ao enviar candidatura.");
+  }
+}
+
+async function carregarMinhasCandidaturas() {
+  const container = document.getElementById("minhas-candidaturas");
+  if (!container) return;
+
+  container.innerHTML = "Carregando...";
+
+  if (!usuarioAtual || tipoUsuario !== "candidato") {
+    container.innerHTML = "";
+    return;
+  }
+
+  try {
+    const snapshot = await getDocs(query(collection(db, "Candidatos"), orderBy("Data", "desc")));
+
+    container.innerHTML = "";
+    let encontrou = false;
+
+    snapshot.forEach((docItem) => {
+      const candidatura = docItem.data();
+
+      if ((candidatura.UsuarioId || "") !== usuarioAtual.uid) return;
+
+      encontrou = true;
+
+      const status = candidatura.Status || "Enviado";
+
+      const div = document.createElement("div");
+      div.className = "vaga";
+
+      div.innerHTML = `
+        <h3>${candidatura.Vaga || ""}</h3>
+        <p><strong>Empresa:</strong> ${candidatura.Empresa || ""}</p>
+        <p><strong>Cidade:</strong> ${candidatura.Cidade || ""}</p>
+        <p><strong>Status:</strong> ${status}</p>
+      `;
+
+      container.appendChild(div);
+    });
+
+    if (!encontrou) {
+      container.innerHTML = "<p>Nenhuma candidatura encontrada.</p>";
+    }
+  } catch (erro) {
+    console.error("Erro ao carregar candidaturas:", erro);
+    container.innerHTML = "<p>Erro ao carregar candidaturas.</p>";
+  }
+}
+
+async function verCandidatosDaVaga(tituloVaga) {
+  const lista = document.getElementById("lista-candidatos");
+  const mensagem = document.getElementById("mensagem-candidatos");
+
+  lista.innerHTML = "";
+  mensagem.innerHTML = "Carregando candidatos...";
+  document.getElementById("modal-candidatos-fundo").style.display = "block";
+
+  if (!usuarioAtual || tipoUsuario !== "empresa") {
+    mensagem.innerHTML = "Faça login como empresa.";
+    return;
+  }
+
+  try {
+    const vagasSnap = await getDocs(query(collection(db, "Vagas"), orderBy("Data", "desc")));
+    let vagaPertenceEmpresa = false;
+
+    vagasSnap.forEach((docItem) => {
+      const vaga = docItem.data();
+      if ((vaga.Titulo || "") === tituloVaga && (vaga.EmpresaId || "") === usuarioAtual.uid) {
+        vagaPertenceEmpresa = true;
+      }
+    });
+
+    if (!vagaPertenceEmpresa) {
+      mensagem.innerHTML = "Essa vaga não pertence à empresa logada.";
+      return;
+    }
+
+    const candSnap = await getDocs(query(collection(db, "Candidatos"), orderBy("Data", "desc")));
+
+    lista.innerHTML = "";
+    let encontrou = false;
+
+    candSnap.forEach((docItem) => {
+      const c = docItem.data();
+
+      if ((c.Vaga || "") !== tituloVaga) return;
+      if ((c.Empresa || "") !== nomeEmpresaAtual) return;
+
+      encontrou = true;
+      const statusAtual = c.Status || "Enviado";
+
+      const div = document.createElement("div");
+      div.className = "candidato";
+
+      div.innerHTML = `
+        <h3>${c.Nome || ""}</h3>
+        <p><strong>WhatsApp:</strong> ${c.WhatsApp || ""}</p>
+        <p><strong>Experiência:</strong> ${c.Experiencia || ""}</p>
+        <p><strong>Status atual:</strong> ${statusAtual}</p>
+
+        <div class="linha-status">
+          <select id="status-${docItem.id}">
+            <option value="Enviado" ${statusAtual === "Enviado" ? "selected" : ""}>Enviado</option>
+            <option value="Em análise" ${statusAtual === "Em análise" ? "selected" : ""}>Em análise</option>
+            <option value="Entrevista" ${statusAtual === "Entrevista" ? "selected" : ""}>Entrevista</option>
+            <option value="Aprovado" ${statusAtual === "Aprovado" ? "selected" : ""}>Aprovado</option>
+            <option value="Reprovado" ${statusAtual === "Reprovado" ? "selected" : ""}>Reprovado</option>
+          </select>
+          <button class="acao-empresa" onclick="atualizarStatusCandidatura('${docItem.id}')">Salvar status</button>
+        </div>
+      `;
+
+      lista.appendChild(div);
+    });
+
+    mensagem.innerHTML = encontrou ? "" : "Nenhum candidato encontrado para essa vaga.";
+  } catch (erro) {
+    console.error("Erro ao carregar candidatos da vaga:", erro);
+    mensagem.innerHTML = "Erro ao carregar candidatos.";
+  }
+}
+
+async function atualizarStatusCandidatura(candidaturaId) {
+  try {
+    const select = document.getElementById(`status-${candidaturaId}`);
+    const novoStatus = select.value;
+
+    await updateDoc(doc(db, "Candidatos", candidaturaId), {
+      Status: novoStatus
+    });
+
+    document.getElementById("mensagem-candidatos").innerHTML = "Status atualizado com sucesso.";
+    carregarMinhasCandidaturas();
+  } catch (erro) {
+    console.error("Erro ao atualizar status:", erro);
+    document.getElementById("mensagem-candidatos").innerHTML = "Erro ao atualizar status.";
+  }
+}
+
+function fecharModalCandidatos() {
+  document.getElementById("modal-candidatos-fundo").style.display = "none";
+}
+
+function escapeTexto(texto) {
+  return String(texto)
+    .replace(/'/g, "\\'")
+    .replace(/"/g, "&quot;")
+    .replace(/\n/g, " ");
+}
+
+carregarVagas();

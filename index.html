@@ -559,7 +559,35 @@
       </div>
 
       <div id="candidato-painel" class="oculto">
+        <div class="card">
+          <h3>Meu perfil</h3>
+
+          <div class="form-grid">
+            <div>
+              <label for="perfil-cand-nome">Nome</label>
+              <input id="perfil-cand-nome" placeholder="Seu nome">
+            </div>
+
+            <div>
+              <label for="perfil-cand-whatsapp">WhatsApp</label>
+              <input id="perfil-cand-whatsapp" placeholder="WhatsApp">
+            </div>
+
+            <div class="form-grid-full">
+              <label for="perfil-cand-experiencia">Experiência</label>
+              <textarea id="perfil-cand-experiencia" placeholder="Resumo da sua experiência"></textarea>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="acao-candidato" onclick="salvarPerfilCandidato()">Salvar perfil</button>
+          </div>
+
+          <div id="mensagem-perfil-candidato" class="mensagem"></div>
+        </div>
+
         <div class="divider"></div>
+
         <h3>Minhas candidaturas</h3>
         <div id="minhas-candidaturas" class="candidaturas-grid"></div>
       </div>
@@ -601,7 +629,7 @@
     </div>
 
     <div class="footer-note">
-      StaffGo MVP • HTML compatível com script estável
+      StaffGo MVP • perfil do candidato habilitado
     </div>
   </div>
 

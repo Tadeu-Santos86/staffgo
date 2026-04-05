@@ -1,290 +1,153 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <title>StaffGo</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>StaffGo</title>
 
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #0f172a;
-      color: white;
-      text-align: center;
-      padding: 60px 20px;
-    }
+<style>
+body {
+  font-family: Arial;
+  background: #0f172a;
+  color: white;
+  padding: 20px;
+}
 
-    h1 {
-      font-size: 48px;
-      color: #22c55e;
-      margin-bottom: 10px;
-    }
+button {
+  margin: 5px;
+  padding: 10px;
+  cursor: pointer;
+}
 
-    p {
-      font-size: 20px;
-      color: #94a3b8;
-      margin-bottom: 30px;
-    }
+input, textarea {
+  display: block;
+  margin: 10px 0;
+  padding: 8px;
+  width: 300px;
+}
 
-    .botoes {
-      margin-bottom: 30px;
-    }
+.vaga {
+  background: #1e293b;
+  padding: 15px;
+  margin: 10px 0;
+  border-radius: 8px;
+}
 
-    button {
-      margin: 8px;
-      padding: 12px 24px;
-      border: none;
-      background: #22c55e;
-      color: black;
-      font-size: 16px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: bold;
-    }
+.oculto {
+  display: none;
+}
+</style>
 
-    .botao-secundario {
-      background: #38bdf8;
-      color: #0f172a;
-    }
-
-    .botao-alerta {
-      background: #ef4444;
-      color: white;
-    }
-
-    .secao {
-      max-width: 950px;
-      margin: 0 auto 30px auto;
-      background: #1e293b;
-      border-radius: 12px;
-      padding: 20px;
-      display: none;
-      text-align: left;
-    }
-
-    .secao h2 {
-      text-align: center;
-      margin-top: 0;
-      color: white;
-    }
-
-    label {
-      display: block;
-      margin-bottom: 6px;
-      color: #cbd5e1;
-      font-weight: bold;
-    }
-
-    input, textarea {
-      width: 100%;
-      padding: 12px;
-      margin: 8px 0 16px 0;
-      border-radius: 8px;
-      border: none;
-      font-size: 15px;
-      box-sizing: border-box;
-      font-family: Arial, sans-serif;
-    }
-
-    textarea {
-      min-height: 90px;
-      resize: vertical;
-    }
-
-    .vaga, .candidato, .auth-box {
-      margin-top: 15px;
-      padding: 18px;
-      background: #334155;
-      border-radius: 10px;
-    }
-
-    .vaga h3, .candidato h3 {
-      margin: 0 0 8px 0;
-      color: #22c55e;
-    }
-
-    .vaga p, .candidato p, .auth-box p {
-      margin: 4px 0;
-      font-size: 16px;
-      color: #e2e8f0;
-    }
-
-    .acoes-vaga, .acoes-candidato {
-      margin-top: 12px;
-    }
-
-    .topo-acoes {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    .mensagem {
-      text-align: center;
-      color: #cbd5e1;
-      margin-top: 15px;
-      font-size: 15px;
-    }
-
-    .modal-fundo {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.7);
-      z-index: 999;
-      padding: 20px;
-      box-sizing: border-box;
-      overflow-y: auto;
-    }
-
-    .modal {
-      max-width: 700px;
-      margin: 40px auto;
-      background: #1e293b;
-      border-radius: 12px;
-      padding: 20px;
-      text-align: left;
-    }
-
-    .modal h2 {
-      text-align: center;
-      margin-top: 0;
-    }
-
-    .fechar {
-      background: #ef4444;
-      color: white;
-    }
-
-    .subtitulo {
-      color: #94a3b8;
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    .linha {
-      border-top: 1px solid #475569;
-      margin: 30px 0;
-    }
-
-    .oculto {
-      display: none;
-    }
-  </style>
 </head>
 <body>
 
-  <h1>StaffGo 🚀</h1>
-  <p>Conectando empresas e profissionais</p>
+<h1>StaffGo</h1>
 
-  <div class="botoes">
-    <button onclick="abrirSecao('secao-vagas')">Ver vagas</button>
-    <button onclick="abrirSecao('secao-empresa')">Sou empresa</button>
+<!-- MENU -->
+<button onclick="abrirSecao('secao-vagas')">Ver vagas</button>
+<button onclick="abrirSecao('secao-empresa')">Sou empresa</button>
+<button onclick="abrirSecao('secao-candidato')">Sou candidato</button>
+
+<hr>
+
+<!-- VAGAS -->
+<div id="secao-vagas">
+  <h2>Vagas disponíveis</h2>
+  <div id="mensagem-vagas"></div>
+  <div id="vagas"></div>
+</div>
+
+<!-- EMPRESA -->
+<div id="secao-empresa" style="display:none">
+
+  <h2>Área da Empresa</h2>
+
+  <div id="empresa-auth">
+    <input id="empresa-nome-cadastro" placeholder="Nome da empresa">
+    <input id="empresa-email" placeholder="Email">
+    <input id="empresa-senha" type="password" placeholder="Senha">
+
+    <button onclick="cadastrarEmpresa()">Cadastrar</button>
+    <button onclick="loginEmpresa()">Entrar</button>
+
+    <div id="mensagem-auth"></div>
   </div>
 
-  <div id="secao-vagas" class="secao">
-    <h2>Vagas disponíveis</h2>
-    <div class="topo-acoes">
-      <button onclick="carregarVagas()">Atualizar vagas</button>
-    </div>
-    <div id="vagas"></div>
-    <div id="mensagem-vagas" class="mensagem"></div>
+  <div id="empresa-logada-box" class="oculto">
+    <p><strong>Empresa:</strong> <span id="empresa-logada-nome"></span></p>
+    <button onclick="logoutEmpresa()">Sair</button>
   </div>
 
-  <div id="secao-empresa" class="secao">
-    <h2>Painel da empresa</h2>
-    <p class="subtitulo">Cadastro, login, vagas e candidatos</p>
+  <div id="empresa-painel-conteudo" class="oculto">
 
-    <div id="empresa-auth" class="auth-box">
-      <h2>Acesso da empresa</h2>
+    <h3>Cadastrar vaga</h3>
 
-      <label for="empresa-nome-cadastro">Nome da empresa</label>
-      <input type="text" id="empresa-nome-cadastro" placeholder="Ex: Hotel Modelo">
+    <input id="titulo" placeholder="Título">
+    <input id="empresa" placeholder="Empresa">
+    <input id="cidade" placeholder="Cidade">
+    <input id="salario" placeholder="Salário">
+    <textarea id="descricao" placeholder="Descrição"></textarea>
 
-      <label for="empresa-email">E-mail</label>
-      <input type="email" id="empresa-email" placeholder="Ex: contato@empresa.com">
+    <button onclick="salvarOuAtualizarVaga()">Salvar vaga</button>
 
-      <label for="empresa-senha">Senha</label>
-      <input type="password" id="empresa-senha" placeholder="Digite sua senha">
+    <div id="mensagem-empresa"></div>
 
-      <button onclick="cadastrarEmpresa()">Cadastrar empresa</button>
-      <button class="botao-secundario" onclick="loginEmpresa()">Entrar</button>
+    <h3>Minhas vagas</h3>
+    <div id="mensagem-vagas-empresa"></div>
+    <div id="vagas-empresa"></div>
 
-      <div id="mensagem-auth" class="mensagem"></div>
-    </div>
-
-    <div id="empresa-logada-box" class="auth-box oculto">
-      <h2>Empresa logada</h2>
-      <p><strong>Empresa:</strong> <span id="empresa-logada-nome">-</span></p>
-      <p><strong>E-mail:</strong> <span id="empresa-logada-email">-</span></p>
-      <div class="topo-acoes">
-        <button class="botao-alerta" onclick="logoutEmpresa()">Sair</button>
-      </div>
-    </div>
-
-    <div id="empresa-painel-conteudo" class="oculto">
-      <div class="linha"></div>
-
-      <label for="titulo">Título da vaga</label>
-      <input type="text" id="titulo" placeholder="Ex: Recepcionista de Hotel">
-
-      <label for="empresa">Empresa</label>
-      <input type="text" id="empresa" placeholder="Ex: Resort Luxo SP">
-
-      <label for="cidade">Cidade</label>
-      <input type="text" id="cidade" placeholder="Ex: São Paulo">
-
-      <label for="salario">Salário</label>
-      <input type="text" id="salario" placeholder="Ex: R$ 2.000">
-
-      <label for="descricao">Descrição</label>
-      <textarea id="descricao" placeholder="Ex: Atendimento ao cliente, check-in e suporte"></textarea>
-
-      <button onclick="salvarOuAtualizarVaga()">Salvar vaga</button>
-      <button class="botao-secundario" onclick="limparFormularioVaga()">Limpar formulário</button>
-
-      <div id="mensagem-empresa" class="mensagem"></div>
-
-      <div class="linha"></div>
-
-      <h2>Minhas vagas</h2>
-      <div class="topo-acoes">
-        <button onclick="carregarVagasEmpresa()">Atualizar minhas vagas</button>
-      </div>
-      <div id="vagas-empresa"></div>
-      <div id="mensagem-vagas-empresa" class="mensagem"></div>
-    </div>
   </div>
 
-  <div id="modal-candidatura-fundo" class="modal-fundo">
-    <div class="modal">
-      <h2>Candidatar-se à vaga</h2>
+</div>
 
-      <label for="cand-nome">Nome</label>
-      <input type="text" id="cand-nome" placeholder="Seu nome completo">
+<!-- CANDIDATO -->
+<div id="secao-candidato" style="display:none">
 
-      <label for="cand-whatsapp">WhatsApp</label>
-      <input type="text" id="cand-whatsapp" placeholder="Ex: 11999999999">
+  <h2>Área do Candidato</h2>
 
-      <label for="cand-experiencia">Experiência</label>
-      <textarea id="cand-experiencia" placeholder="Ex: Trabalhei 2 anos em hotelaria"></textarea>
+  <div id="candidato-auth">
+    <input id="cand-nome-cadastro" placeholder="Seu nome">
+    <input id="cand-email" placeholder="Email">
+    <input id="cand-senha" type="password" placeholder="Senha">
 
-      <button onclick="enviarCandidatura()">Enviar candidatura</button>
-      <button class="fechar" onclick="fecharModalCandidatura()">Fechar</button>
+    <button onclick="cadastrarCandidato()">Cadastrar</button>
+    <button onclick="loginCandidato()">Entrar</button>
 
-      <div id="mensagem-candidatura" class="mensagem"></div>
-    </div>
+    <div id="mensagem-candidato-auth"></div>
   </div>
 
-  <div id="modal-candidatos-fundo" class="modal-fundo">
-    <div class="modal">
-      <h2>Candidatos da vaga</h2>
-      <div id="lista-candidatos"></div>
-      <div id="mensagem-candidatos" class="mensagem"></div>
-      <button class="fechar" onclick="fecharModalCandidatos()">Fechar</button>
-    </div>
+  <div id="candidato-logado-box" class="oculto">
+    <p><strong>Logado como:</strong> <span id="candidato-logado-nome"></span></p>
+    <button onclick="logoutCandidato()">Sair</button>
   </div>
 
-  <script type="module" src="script.js"></script>
+  <div id="candidato-painel" class="oculto">
+    <h3>Minhas candidaturas</h3>
+    <div id="minhas-candidaturas"></div>
+  </div>
+
+</div>
+
+<!-- MODAL CANDIDATURA -->
+<div id="modal-candidatura-fundo" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000a;">
+
+  <div style="background:#1e293b; padding:20px; margin:100px auto; width:300px; border-radius:8px;">
+
+    <h3>Candidatar-se</h3>
+
+    <input id="cand-nome" placeholder="Nome">
+    <input id="cand-whatsapp" placeholder="WhatsApp">
+    <textarea id="cand-experiencia" placeholder="Experiência"></textarea>
+
+    <button onclick="enviarCandidatura()">Enviar</button>
+    <button onclick="fecharModalCandidatura()">Fechar</button>
+
+    <div id="mensagem-candidatura"></div>
+
+  </div>
+
+</div>
+
+<script type="module" src="script.js"></script>
+
 </body>
 </html>

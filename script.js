@@ -11,6 +11,14 @@ import {
   updateDoc
 } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+
 const firebaseConfig = {
   apiKey: "AIzaSyBwKDWQNYTV1MNL9isJVoxLz2ErqBOYaM0",
   authDomain: "staffgo-1927e.firebaseapp.com",
@@ -22,13 +30,15 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
 
 let vagaSelecionada = null;
 let vagaEditandoId = null;
+let usuarioEmpresaAtual = null;
+let nomeEmpresaAtual = "";
 
 window.abrirSecao = abrirSecao;
 window.salvarOuAtualizarVaga = salvarOuAtualizarVaga;
-window.cadastrarVaga = salvarOuAtualizarVaga;
 window.carregarVagas = carregarVagas;
 window.carregarVagasEmpresa = carregarVagasEmpresa;
 window.compartilhar = compartilhar;
@@ -40,6 +50,20 @@ window.excluirVaga = excluirVaga;
 window.verCandidatos = verCandidatos;
 window.fecharModalCandidatos = fecharModalCandidatos;
 window.limparFormularioVaga = limparFormularioVaga;
+window.cadastrarEmpresa = cadastrarEmpresa;
+window.loginEmpresa = loginEmpresa;
+window.logoutEmpresa = logoutEmpresa;
+
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    usuarioEmpresaAtual = user;
+    aplicarEstadoEmpresaLogada();
+  } else {
+    usuarioEmpresaAtual = null;
+    nomeEmpresaAtual = "";
+    aplicarEstadoDeslogado();
+  }
+});
 
 function abrirSecao(id) {
   document.getElementById("secao-vagas").style.display = "none";
@@ -52,8 +76,120 @@ function abrirSecao(id) {
   }
 
   if (id === "secao-empresa") {
-    carregarVagasEmpresa();
+    if (usuarioEmpresaAtual) {
+      aplicarEstadoEmpresaLogada();
+    } else {
+      aplicarEstadoDeslogado();
+    }
   }
+}
+
+function aplicarEstadoEmpresaLogada() {
+  const nomeSalvo = localStorage.getItem("staffgo_empresa_nome") || "";
+  if (nomeSalvo) {
+    nomeEmpresaAtual = nomeSalvo;
+  }
+
+  document.getElementById("empresa-auth").classList.add("oculto");
+  document.getElementById("empresa-logada-box").classList.remove("oculto");
+  document.getElementById("empresa-painel-conteudo").classList.remove("oculto");
+
+  document.getElementById("empresa-logada-email").textContent = usuarioEmpresaAtual?.email || "-";
+  document.getElementById("empresa-logada-nome").textContent = nomeEmpresaAtual || "Empresa";
+
+  if (!document.getElementById("empresa").value) {
+    document.getElementById("empresa").value = nomeEmpresaAtual || "";
+  }
+
+  carregarVagasEmpresa();
+}
+
+function aplicarEstadoDeslogado() {
+  document.getElementById("empresa-auth").classList.remove("oculto");
+  document.getElementById("empresa-logada-box").classList.add("oculto");
+  document.getElementById("empresa-painel-conteudo").classList.add("oculto");
+  document.getElementById("mensagem-auth").innerHTML = "";
+}
+
+async function cadastrarEmpresa() {
+  const nome = document.getElementById("empresa-nome-cadastro").value.trim();
+  const email = document.getElementById("empresa-email").value.trim();
+  const senha = document.getElementById("empresa-senha").value.trim();
+  const mensagem = document.getElementById("mensagem-auth");
+
+  if (!nome || !email || !senha) {
+    alert("Preencha nome da empresa, e-mail e senha.");
+    return;
+  }
+
+  mensagem.innerHTML = "Cadastrando empresa...";
+
+  try {
+    await createUserWithEmailAndPassword(auth, email, senha);
+    localStorage.setItem("staffgo_empresa_nome", nome);
+    nomeEmpresaAtual = nome;
+    mensagem.innerHTML = "Empresa cadastrada com sucesso.";
+    limparCamposAuth();
+  } catch (erro) {
+    console.error("Erro ao cadastrar empresa:", erro);
+    mensagem.innerHTML = traduzirErroAuth(erro.code);
+  }
+}
+
+async function loginEmpresa() {
+  const email = document.getElementById("empresa-email").value.trim();
+  const senha = document.getElementById("empresa-senha").value.trim();
+  const nome = document.getElementById("empresa-nome-cadastro").value.trim();
+  const mensagem = document.getElementById("mensagem-auth");
+
+  if (!email || !senha) {
+    alert("Preencha e-mail e senha.");
+    return;
+  }
+
+  mensagem.innerHTML = "Entrando...";
+
+  try {
+    await signInWithEmailAndPassword(auth, email, senha);
+    if (nome) {
+      localStorage.setItem("staffgo_empresa_nome", nome);
+      nomeEmpresaAtual = nome;
+    }
+    mensagem.innerHTML = "Login realizado com sucesso.";
+    limparCamposAuth();
+  } catch (erro) {
+    console.error("Erro ao entrar:", erro);
+    mensagem.innerHTML = traduzirErroAuth(erro.code);
+  }
+}
+
+async function logoutEmpresa() {
+  try {
+    await signOut(auth);
+    limparFormularioVaga();
+  } catch (erro) {
+    console.error("Erro ao sair:", erro);
+    alert("Erro ao sair.");
+  }
+}
+
+function limparCamposAuth() {
+  document.getElementById("empresa-nome-cadastro").value = "";
+  document.getElementById("empresa-email").value = "";
+  document.getElementById("empresa-senha").value = "";
+}
+
+function traduzirErroAuth(codigo) {
+  const mapa = {
+    "auth/email-already-in-use": "Esse e-mail já está cadastrado.",
+    "auth/invalid-email": "E-mail inválido.",
+    "auth/weak-password": "Senha fraca. Use pelo menos 6 caracteres.",
+    "auth/invalid-credential": "E-mail ou senha inválidos.",
+    "auth/user-not-found": "Usuário não encontrado.",
+    "auth/wrong-password": "Senha incorreta."
+  };
+
+  return mapa[codigo] || "Ocorreu um erro no login/cadastro.";
 }
 
 async function carregarVagas() {
@@ -96,8 +232,8 @@ async function carregarVagas() {
         <p><strong>Salário:</strong> ${salario}</p>
         <p><strong>Descrição:</strong> ${descricao}</p>
         <div class="acoes-vaga">
-          <button onclick="compartilhar('${titulo}')">Compartilhar vaga</button>
-          <button onclick="abrirModalCandidatura('${titulo}', '${empresa}', '${cidade}')">Candidatar-se</button>
+          <button onclick="compartilhar('${escapeTexto(titulo)}')">Compartilhar vaga</button>
+          <button onclick="abrirModalCandidatura('${escapeTexto(titulo)}', '${escapeTexto(empresa)}', '${escapeTexto(cidade)}', '${escapeTexto(vaga.EmpresaId || "")}')">Candidatar-se</button>
         </div>
       `;
 
@@ -116,6 +252,11 @@ async function carregarVagasEmpresa() {
   container.innerHTML = "";
   mensagem.innerHTML = "Carregando vagas da empresa...";
 
+  if (!usuarioEmpresaAtual) {
+    mensagem.innerHTML = "Faça login para ver suas vagas.";
+    return;
+  }
+
   try {
     const vagasRef = collection(db, "Vagas");
     const q = query(vagasRef, orderBy("Data", "desc"));
@@ -123,16 +264,17 @@ async function carregarVagasEmpresa() {
 
     container.innerHTML = "";
 
-    if (snapshot.empty) {
-      mensagem.innerHTML = "Nenhuma vaga cadastrada.";
-      return;
-    }
-
-    mensagem.innerHTML = "";
+    let encontrou = false;
 
     snapshot.forEach((docItem) => {
       const vaga = docItem.data();
       const vagaId = docItem.id;
+
+      if ((vaga.EmpresaId || "") !== usuarioEmpresaAtual.uid) {
+        return;
+      }
+
+      encontrou = true;
 
       const titulo = vaga.Titulo || "";
       const empresa = vaga.Empresa || "";
@@ -158,6 +300,8 @@ async function carregarVagasEmpresa() {
 
       container.appendChild(div);
     });
+
+    mensagem.innerHTML = encontrou ? "" : "Nenhuma vaga sua cadastrada.";
   } catch (erro) {
     console.error("Erro ao carregar vagas da empresa:", erro);
     mensagem.innerHTML = "Erro ao carregar vagas da empresa.";
@@ -165,8 +309,13 @@ async function carregarVagasEmpresa() {
 }
 
 async function salvarOuAtualizarVaga() {
+  if (!usuarioEmpresaAtual) {
+    alert("Faça login da empresa para cadastrar ou editar vagas.");
+    return;
+  }
+
   const titulo = document.getElementById("titulo").value.trim();
-  const empresa = document.getElementById("empresa").value.trim();
+  const empresa = document.getElementById("empresa").value.trim() || nomeEmpresaAtual || "Empresa";
   const cidade = document.getElementById("cidade").value.trim();
   const salario = document.getElementById("salario").value.trim();
   const descricao = document.getElementById("descricao").value.trim();
@@ -189,7 +338,9 @@ async function salvarOuAtualizarVaga() {
         Cidade: cidade,
         Salario: salario,
         Descrição: descricao,
-        Data: new Date()
+        Data: new Date(),
+        EmpresaId: usuarioEmpresaAtual.uid,
+        EmpresaEmail: usuarioEmpresaAtual.email || ""
       });
 
       mensagem.innerHTML = "Vaga atualizada com sucesso.";
@@ -201,7 +352,9 @@ async function salvarOuAtualizarVaga() {
         Cidade: cidade,
         Salario: salario,
         Descrição: descricao,
-        Data: new Date()
+        Data: new Date(),
+        EmpresaId: usuarioEmpresaAtual.uid,
+        EmpresaEmail: usuarioEmpresaAtual.email || ""
       });
 
       mensagem.innerHTML = "Vaga cadastrada com sucesso.";
@@ -244,7 +397,7 @@ async function excluirVaga(vagaId) {
 
 function limparFormularioVaga() {
   document.getElementById("titulo").value = "";
-  document.getElementById("empresa").value = "";
+  document.getElementById("empresa").value = nomeEmpresaAtual || "";
   document.getElementById("cidade").value = "";
   document.getElementById("salario").value = "";
   document.getElementById("descricao").value = "";
@@ -258,8 +411,8 @@ function compartilhar(titulo) {
   alert("Texto copiado para compartilhar.");
 }
 
-function abrirModalCandidatura(titulo, empresa, cidade) {
-  vagaSelecionada = { titulo, empresa, cidade };
+function abrirModalCandidatura(titulo, empresa, cidade, empresaId) {
+  vagaSelecionada = { titulo, empresa, cidade, empresaId };
 
   document.getElementById("cand-nome").value = "";
   document.getElementById("cand-whatsapp").value = "";
@@ -299,6 +452,7 @@ async function enviarCandidatura() {
       Vaga: vagaSelecionada.titulo,
       Empresa: vagaSelecionada.empresa,
       Cidade: vagaSelecionada.cidade,
+      VagaEmpresaId: vagaSelecionada.empresaId || "",
       Data: new Date()
     });
 
@@ -321,6 +475,11 @@ async function verCandidatos(tituloVaga) {
   mensagem.innerHTML = "Carregando candidatos...";
   document.getElementById("modal-candidatos-fundo").style.display = "block";
 
+  if (!usuarioEmpresaAtual) {
+    mensagem.innerHTML = "Faça login para ver candidatos.";
+    return;
+  }
+
   try {
     const candidatosRef = collection(db, "Candidatos");
     const q = query(candidatosRef, orderBy("Data", "desc"));
@@ -333,7 +492,10 @@ async function verCandidatos(tituloVaga) {
     snapshot.forEach((docItem) => {
       const candidato = docItem.data();
 
-      if ((candidato.Vaga || "") === tituloVaga) {
+      const mesmaVaga = (candidato.Vaga || "") === tituloVaga;
+      const mesmaEmpresa = (candidato.VagaEmpresaId || "") === usuarioEmpresaAtual.uid;
+
+      if (mesmaVaga && mesmaEmpresa) {
         encontrou = true;
 
         const nome = candidato.Nome || "";
@@ -341,7 +503,8 @@ async function verCandidatos(tituloVaga) {
         const experiencia = candidato.Experiencia || "";
         const vaga = candidato.Vaga || "";
 
-        const linkWhatsApp = `https://wa.me/55${whatsapp}?text=${encodeURIComponent(
+        const telefoneLimpo = String(whatsapp).replace(/\D/g, "");
+        const linkWhatsApp = `https://wa.me/55${telefoneLimpo}?text=${encodeURIComponent(
           "Olá, vi sua candidatura para a vaga de " + vaga + " no StaffGo."
         )}`;
 

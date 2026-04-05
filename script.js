@@ -338,6 +338,10 @@ function renderizarVagasFiltradas() {
       <p><strong>Salário:</strong> ${salario}</p>
       <p><strong>Descrição:</strong> ${descricao}</p>
       <button class="acao-candidato" onclick="abrirModalCandidatura('${escapeTexto(titulo)}','${escapeTexto(empresa)}','${escapeTexto(cidade)}')">Candidatar-se</button>
+
+<button class="acao-neutra" onclick="compartilharVaga('${encodeURIComponent(titulo)}')">
+  Compartilhar
+</button>
     `;
 
     container.appendChild(div);
@@ -612,3 +616,26 @@ function escapeTexto(texto) {
 }
 
 carregarVagas();
+window.compartilharVaga = compartilharVaga;
+
+function compartilharVaga(titulo) {
+  const url = `${window.location.origin}${window.location.pathname}?vaga=${titulo}`;
+
+  navigator.clipboard.writeText(url).then(() => {
+    alert("Link copiado! Agora é só enviar no WhatsApp.");
+  });
+}
+function aplicarFiltroViaURL() {
+  const params = new URLSearchParams(window.location.search);
+  const vaga = params.get("vaga");
+
+  if (vaga) {
+    document.getElementById("filtro-titulo").value = decodeURIComponent(vaga);
+
+    setTimeout(() => {
+      aplicarFiltrosVagas();
+    }, 500);
+  }
+}
+
+aplicarFiltroViaURL();

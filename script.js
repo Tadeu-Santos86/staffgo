@@ -20,10 +20,15 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+let vagaSelecionada = null;
+
 window.abrirSecao = abrirSecao;
 window.cadastrarVaga = cadastrarVaga;
 window.compartilhar = compartilhar;
 window.carregarVagas = carregarVagas;
+window.abrirModalCandidatura = abrirModalCandidatura;
+window.fecharModalCandidatura = fecharModalCandidatura;
+window.enviarCandidatura = enviarCandidatura;
 
 function abrirSecao(id) {
   document.getElementById("secao-vagas").style.display = "none";
@@ -63,14 +68,21 @@ async function carregarVagas() {
       const div = document.createElement("div");
       div.className = "vaga";
 
+      const titulo = vaga.Titulo || "";
+      const empresa = vaga.Empresa || "";
+      const cidade = vaga.Cidade || "";
+      const salario = vaga.Salario || "";
+      const descricao = vaga.Descrição || "";
+
       div.innerHTML = `
-        <h3>${vaga.Titulo || ""}</h3>
-        <p><strong>Empresa:</strong> ${vaga.Empresa || ""}</p>
-        <p><strong>Cidade:</strong> ${vaga.Cidade || ""}</p>
-        <p><strong>Salário:</strong> ${vaga.Salario || ""}</p>
-        <p><strong>Descrição:</strong> ${vaga.Descrição || ""}</p>
+        <h3>${titulo}</h3>
+        <p><strong>Empresa:</strong> ${empresa}</p>
+        <p><strong>Cidade:</strong> ${cidade}</p>
+        <p><strong>Salário:</strong> ${salario}</p>
+        <p><strong>Descrição:</strong> ${descricao}</p>
         <div class="acoes-vaga">
-          <button onclick="compartilhar('${vaga.Titulo || ""}')">Compartilhar vaga</button>
+          <button onclick="compartilhar('${titulo}')">Compartilhar vaga</button>
+          <button onclick="abrirModalCandidatura('${titulo}', '${empresa}', '${cidade}')">Candidatar-se</button>
         </div>
       `;
 
@@ -125,4 +137,59 @@ function compartilhar(titulo) {
   const texto = `Olha essa vaga no StaffGo: ${titulo}`;
   navigator.clipboard.writeText(texto);
   alert("Texto copiado para compartilhar.");
+}
+
+function abrirModalCandidatura(titulo, empresa, cidade) {
+  vagaSelecionada = { titulo, empresa, cidade };
+
+  document.getElementById("cand-nome").value = "";
+  document.getElementById("cand-whatsapp").value = "";
+  document.getElementById("cand-experiencia").value = "";
+  document.getElementById("mensagem-candidatura").innerHTML = "";
+
+  document.getElementById("modal-candidatura-fundo").style.display = "block";
+}
+
+function fecharModalCandidatura() {
+  document.getElementById("modal-candidatura-fundo").style.display = "none";
+}
+
+async function enviarCandidatura() {
+  const nome = document.getElementById("cand-nome").value.trim();
+  const whatsapp = document.getElementById("cand-whatsapp").value.trim();
+  const experiencia = document.getElementById("cand-experiencia").value.trim();
+  const mensagem = document.getElementById("mensagem-candidatura");
+
+  if (!nome || !whatsapp || !experiencia) {
+    alert("Preencha todos os campos da candidatura.");
+    return;
+  }
+
+  if (!vagaSelecionada) {
+    alert("Nenhuma vaga selecionada.");
+    return;
+  }
+
+  mensagem.innerHTML = "Enviando candidatura...";
+
+  try {
+    await addDoc(collection(db, "Candidatos"), {
+      Nome: nome,
+      WhatsApp: whatsapp,
+      Experiencia: experiencia,
+      Vaga: vagaSelecionada.titulo,
+      Empresa: vagaSelecionada.empresa,
+      Cidade: vagaSelecionada.cidade,
+      Data: new Date()
+    });
+
+    mensagem.innerHTML = "Candidatura enviada com sucesso.";
+
+    setTimeout(() => {
+      fecharModalCandidatura();
+    }, 1200);
+  } catch (erro) {
+    console.error("Erro ao enviar candidatura:", erro);
+    mensagem.innerHTML = "Erro ao enviar candidatura. Verifique as regras do Firestore.";
+  }
 }

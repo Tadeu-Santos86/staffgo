@@ -9,7 +9,8 @@ import {
   doc,
   updateDoc,
   setDoc,
-  getDoc
+  getDoc,
+  deleteDoc
 } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
 import {
@@ -62,6 +63,8 @@ window.verificarAcesso = verificarAcesso;
 window.compartilharVaga = compartilharVaga;
 window.editarVaga = editarVaga;
 window.salvarPerfilCandidato = salvarPerfilCandidato;
+window.editarCandidatura = editarCandidatura;
+window.retirarCandidatura = retirarCandidatura;
 
 onAuthStateChanged(auth, async (user) => {
   if (user) {
@@ -625,6 +628,9 @@ async function carregarMinhasCandidaturas() {
       encontrou = true;
 
       const status = candidatura.Status || "Enviado";
+      const nome = candidatura.Nome || "";
+      const whatsapp = candidatura.WhatsApp || "";
+      const experiencia = candidatura.Experiencia || "";
 
       const div = document.createElement("div");
       div.className = "vaga";
@@ -634,6 +640,10 @@ async function carregarMinhasCandidaturas() {
         <p><strong>Empresa:</strong> ${candidatura.Empresa || ""}</p>
         <p><strong>Cidade:</strong> ${candidatura.Cidade || ""}</p>
         <p><strong>Status:</strong> ${status}</p>
+        <div class="actions">
+          <button class="acao-candidato" onclick="editarCandidatura('${docItem.id}','${escapeTexto(nome)}','${escapeTexto(whatsapp)}','${escapeTexto(experiencia)}')">Editar candidatura</button>
+          <button class="acao-alerta" onclick="retirarCandidatura('${docItem.id}')">Retirar candidatura</button>
+        </div>
       `;
 
       container.appendChild(div);
@@ -645,6 +655,54 @@ async function carregarMinhasCandidaturas() {
   } catch (erro) {
     console.error("Erro ao carregar candidaturas:", erro);
     container.innerHTML = "<p>Erro ao carregar candidaturas.</p>";
+  }
+}
+
+function editarCandidatura(id, nomeAtual, whatsappAtual, experienciaAtual) {
+  const novoNome = prompt("Editar nome:", nomeAtual);
+  if (novoNome === null) return;
+
+  const novoWhatsApp = prompt("Editar WhatsApp:", whatsappAtual);
+  if (novoWhatsApp === null) return;
+
+  const novaExperiencia = prompt("Editar experiência:", experienciaAtual);
+  if (novaExperiencia === null) return;
+
+  atualizarCandidatura(id, novoNome.trim(), novoWhatsApp.trim(), novaExperiencia.trim());
+}
+
+async function atualizarCandidatura(id, nome, whatsapp, experiencia) {
+  if (!nome || !whatsapp || !experiencia) {
+    alert("Preencha todos os campos da candidatura.");
+    return;
+  }
+
+  try {
+    await updateDoc(doc(db, "Candidatos", id), {
+      Nome: nome,
+      WhatsApp: whatsapp,
+      Experiencia: experiencia
+    });
+
+    carregarMinhasCandidaturas();
+    alert("Candidatura atualizada com sucesso.");
+  } catch (erro) {
+    console.error("Erro ao atualizar candidatura:", erro);
+    alert("Erro ao atualizar candidatura.");
+  }
+}
+
+async function retirarCandidatura(id) {
+  const confirmar = confirm("Deseja retirar esta candidatura?");
+  if (!confirmar) return;
+
+  try {
+    await deleteDoc(doc(db, "Candidatos", id));
+    carregarMinhasCandidaturas();
+    alert("Candidatura retirada com sucesso.");
+  } catch (erro) {
+    console.error("Erro ao retirar candidatura:", erro);
+    alert("Erro ao retirar candidatura.");
   }
 }
 

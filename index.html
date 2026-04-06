@@ -1,841 +1,658 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-import {
-  getFirestore,
-  collection,
-  addDoc,
-  getDocs,
-  query,
-  orderBy,
-  doc,
-  updateDoc,
-  setDoc,
-  getDoc,
-  deleteDoc
-} from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StaffGo</title>
 
-import {
-  getAuth,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyBwKDWQNYTV1MNL9isJVoxLz2ErqBOYaM0",
-  authDomain: "staffgo-1927e.firebaseapp.com",
-  projectId: "staffgo-1927e",
-  storageBucket: "staffgo-1927e.firebasestorage.app",
-  messagingSenderId: "571900078925",
-  appId: "1:571900078925:web:e51e80af825aa054e2a504"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
-
-let vagaSelecionada = null;
-let usuarioAtual = null;
-let tipoUsuario = null;
-let nomeEmpresaAtual = "";
-let dadosCandidatoAtual = {};
-let todasAsVagas = [];
-let acessoLiberado = false;
-let vagaEditandoId = null;
-let candidaturaEditandoId = null;
-
-window.abrirSecao = abrirSecao;
-window.cadastrarEmpresa = cadastrarEmpresa;
-window.loginEmpresa = loginEmpresa;
-window.logoutEmpresa = logoutEmpresa;
-window.salvarOuAtualizarVaga = salvarOuAtualizarVaga;
-window.cadastrarCandidato = cadastrarCandidato;
-window.loginCandidato = loginCandidato;
-window.logoutCandidato = logoutCandidato;
-window.abrirModalCandidatura = abrirModalCandidatura;
-window.fecharModalCandidatura = fecharModalCandidatura;
-window.enviarCandidatura = enviarCandidatura;
-window.verCandidatosDaVaga = verCandidatosDaVaga;
-window.fecharModalCandidatos = fecharModalCandidatos;
-window.atualizarStatusCandidatura = atualizarStatusCandidatura;
-window.aplicarFiltrosVagas = aplicarFiltrosVagas;
-window.limparFiltrosVagas = limparFiltrosVagas;
-window.verificarAcesso = verificarAcesso;
-window.compartilharVaga = compartilharVaga;
-window.editarVaga = editarVaga;
-window.salvarPerfilCandidato = salvarPerfilCandidato;
-window.editarCandidatura = editarCandidatura;
-window.retirarCandidatura = retirarCandidatura;
-window.salvarEdicaoCandidatura = salvarEdicaoCandidatura;
-window.fecharModalEditar = fecharModalEditar;
-
-onAuthStateChanged(auth, async (user) => {
-  if (user) {
-    usuarioAtual = user;
-
-    const empresa = await getDoc(doc(db, "Empresas", user.uid));
-    if (empresa.exists()) {
-      tipoUsuario = "empresa";
-      nomeEmpresaAtual = empresa.data().Nome || "";
-      aplicarEmpresaLogada();
-      return;
-    }
-
-    const usuario = await getDoc(doc(db, "Usuarios", user.uid));
-    if (usuario.exists()) {
-      tipoUsuario = "candidato";
-      dadosCandidatoAtual = usuario.data() || {};
-      aplicarCandidatoLogado(dadosCandidatoAtual.Nome || "");
-      return;
-    }
-  }
-
-  usuarioAtual = null;
-  tipoUsuario = null;
-  nomeEmpresaAtual = "";
-  dadosCandidatoAtual = {};
-  candidaturaEditandoId = null;
-  resetarInterfaces();
-});
-
-function abrirSecao(id) {
-  document.getElementById("secao-vagas").style.display = "none";
-  document.getElementById("secao-empresa").style.display = "none";
-  document.getElementById("secao-candidato").style.display = "none";
-
-  document.getElementById(id).style.display = "block";
-
-  if (id === "secao-vagas") carregarVagas();
-  if (id === "secao-candidato") carregarMinhasCandidaturas();
-  if (id === "secao-empresa" && tipoUsuario === "empresa") carregarVagasEmpresa();
+<style>
+:root {
+  --bg: #081120;
+  --card: #122033;
+  --card-2: #1a2940;
+  --text: #f8fafc;
+  --muted: #94a3b8;
+  --primary: #22c55e;
+  --secondary: #38bdf8;
+  --danger: #ef4444;
+  --neutral: #cbd5e1;
+  --line: rgba(255, 255, 255, 0.08);
+  --shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
+  --radius: 18px;
 }
 
-function aplicarEmpresaLogada() {
-  document.getElementById("empresa-auth").classList.add("oculto");
-  document.getElementById("empresa-logada-box").classList.remove("oculto");
-  document.getElementById("empresa-painel-conteudo").classList.remove("oculto");
-  document.getElementById("empresa-logada-nome").textContent = nomeEmpresaAtual || "Empresa";
-  document.getElementById("empresa").value = nomeEmpresaAtual || "";
-  carregarVagasEmpresa();
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
-function aplicarCandidatoLogado(nome) {
-  document.getElementById("candidato-auth").classList.add("oculto");
-  document.getElementById("candidato-logado-box").classList.remove("oculto");
-  document.getElementById("candidato-painel").classList.remove("oculto");
-  document.getElementById("candidato-logado-nome").textContent = nome || "Candidato";
-
-  const perfilNome = document.getElementById("perfil-cand-nome");
-  const perfilWhatsApp = document.getElementById("perfil-cand-whatsapp");
-  const perfilExperiencia = document.getElementById("perfil-cand-experiencia");
-
-  if (perfilNome) perfilNome.value = dadosCandidatoAtual.Nome || "";
-  if (perfilWhatsApp) perfilWhatsApp.value = dadosCandidatoAtual.WhatsApp || "";
-  if (perfilExperiencia) perfilExperiencia.value = dadosCandidatoAtual.Experiencia || "";
-
-  carregarMinhasCandidaturas();
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(34,197,94,0.10), transparent 22%),
+    radial-gradient(circle at top right, rgba(56,189,248,0.10), transparent 20%),
+    linear-gradient(180deg, #07101d 0%, #0b1423 100%);
+  color: var(--text);
+  min-height: 100%;
 }
 
-function resetarInterfaces() {
-  document.getElementById("empresa-auth").classList.remove("oculto");
-  document.getElementById("empresa-logada-box").classList.add("oculto");
-  document.getElementById("empresa-painel-conteudo").classList.add("oculto");
-
-  document.getElementById("candidato-auth").classList.remove("oculto");
-  document.getElementById("candidato-logado-box").classList.add("oculto");
-  document.getElementById("candidato-painel").classList.add("oculto");
+body {
+  padding: 16px;
 }
 
-async function cadastrarEmpresa() {
-  const nome = document.getElementById("empresa-nome-cadastro").value.trim();
-  const email = document.getElementById("empresa-email").value.trim();
-  const senha = document.getElementById("empresa-senha").value.trim();
-
-  if (!nome || !email || !senha) {
-    alert("Preencha nome, e-mail e senha.");
-    return;
-  }
-
-  try {
-    const cred = await createUserWithEmailAndPassword(auth, email, senha);
-
-    await setDoc(doc(db, "Empresas", cred.user.uid), {
-      Nome: nome,
-      Email: email
-    });
-
-    document.getElementById("mensagem-auth").innerHTML = "Empresa cadastrada com sucesso.";
-  } catch (erro) {
-    console.error("Erro ao cadastrar empresa:", erro);
-    alert("Erro ao cadastrar empresa.");
-  }
+.container {
+  max-width: 1180px;
+  margin: 0 auto;
 }
 
-async function loginEmpresa() {
-  const email = document.getElementById("empresa-email").value.trim();
-  const senha = document.getElementById("empresa-senha").value.trim();
-
-  if (!email || !senha) {
-    alert("Preencha e-mail e senha.");
-    return;
-  }
-
-  try {
-    await signInWithEmailAndPassword(auth, email, senha);
-    document.getElementById("mensagem-auth").innerHTML = "Login realizado com sucesso.";
-  } catch (erro) {
-    console.error("Erro ao entrar:", erro);
-    alert("Erro ao entrar.");
-  }
+.hero {
+  background: linear-gradient(135deg, rgba(34,197,94,0.14), rgba(56,189,248,0.12));
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 22px 18px;
+  box-shadow: var(--shadow);
+  margin-bottom: 18px;
 }
 
-async function logoutEmpresa() {
-  try {
-    await signOut(auth);
-    vagaEditandoId = null;
-  } catch (erro) {
-    console.error("Erro ao sair:", erro);
-    alert("Erro ao sair.");
-  }
+.hero-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
-async function cadastrarCandidato() {
-  const nome = document.getElementById("cand-nome-cadastro").value.trim();
-  const email = document.getElementById("cand-email").value.trim();
-  const senha = document.getElementById("cand-senha").value.trim();
-
-  if (!nome || !email || !senha) {
-    alert("Preencha nome, e-mail e senha.");
-    return;
-  }
-
-  try {
-    const cred = await createUserWithEmailAndPassword(auth, email, senha);
-
-    await setDoc(doc(db, "Usuarios", cred.user.uid), {
-      Nome: nome,
-      Email: email,
-      WhatsApp: "",
-      Experiencia: ""
-    });
-
-    document.getElementById("mensagem-candidato-auth").innerHTML = "Candidato cadastrado com sucesso.";
-  } catch (erro) {
-    console.error("Erro ao cadastrar candidato:", erro);
-    alert("Erro ao cadastrar candidato.");
-  }
+.logo-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-async function loginCandidato() {
-  const email = document.getElementById("cand-email").value.trim();
-  const senha = document.getElementById("cand-senha").value.trim();
-
-  if (!email || !senha) {
-    alert("Preencha e-mail e senha.");
-    return;
-  }
-
-  try {
-    await signInWithEmailAndPassword(auth, email, senha);
-    document.getElementById("mensagem-candidato-auth").innerHTML = "Login realizado com sucesso.";
-  } catch (erro) {
-    console.error("Erro ao entrar como candidato:", erro);
-    alert("Erro ao entrar como candidato.");
-  }
+.logo-mark {
+  width: 50px;
+  height: 50px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #03101b;
+  font-weight: 900;
+  font-size: 22px;
+  flex-shrink: 0;
+  box-shadow: 0 8px 24px rgba(34,197,94,0.35);
 }
 
-async function logoutCandidato() {
-  try {
-    await signOut(auth);
-  } catch (erro) {
-    console.error("Erro ao sair:", erro);
-    alert("Erro ao sair.");
-  }
+.hero h1 {
+  margin: 0;
+  font-size: 30px;
+  line-height: 1.05;
 }
 
-async function salvarPerfilCandidato() {
-  if (!usuarioAtual || tipoUsuario !== "candidato") {
-    alert("Faça login como candidato.");
-    return;
-  }
-
-  const nome = document.getElementById("perfil-cand-nome").value.trim();
-  const whatsapp = document.getElementById("perfil-cand-whatsapp").value.trim();
-  const experiencia = document.getElementById("perfil-cand-experiencia").value.trim();
-
-  if (!nome) {
-    alert("Preencha pelo menos o nome.");
-    return;
-  }
-
-  try {
-    await updateDoc(doc(db, "Usuarios", usuarioAtual.uid), {
-      Nome: nome,
-      WhatsApp: whatsapp,
-      Experiencia: experiencia
-    });
-
-    dadosCandidatoAtual.Nome = nome;
-    dadosCandidatoAtual.WhatsApp = whatsapp;
-    dadosCandidatoAtual.Experiencia = experiencia;
-
-    document.getElementById("candidato-logado-nome").textContent = nome;
-    document.getElementById("mensagem-perfil-candidato").innerHTML = "Perfil atualizado com sucesso.";
-  } catch (erro) {
-    console.error("Erro ao salvar perfil do candidato:", erro);
-    document.getElementById("mensagem-perfil-candidato").innerHTML = "Erro ao salvar perfil.";
-  }
+.hero p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.4;
 }
 
-async function salvarOuAtualizarVaga() {
-  if (!usuarioAtual || tipoUsuario !== "empresa") {
-    alert("Faça login como empresa.");
-    return;
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,0.06);
+  color: var(--neutral);
+  border: 1px solid var(--line);
+  padding: 9px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.menu {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+button {
+  border: none;
+  border-radius: 14px;
+  padding: 14px 16px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 15px;
+  min-height: 48px;
+  width: 100%;
+  transition: .18s ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+}
+
+.acao-empresa {
+  background: var(--primary);
+  color: #04120a;
+}
+
+.acao-candidato {
+  background: var(--secondary);
+  color: #03111a;
+}
+
+.acao-alerta {
+  background: var(--danger);
+  color: white;
+}
+
+.acao-neutra {
+  background: var(--neutral);
+  color: #0f172a;
+}
+
+.section {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 18px 14px;
+  margin-bottom: 18px;
+  box-shadow: var(--shadow);
+}
+
+.section h2, .section h3 {
+  margin-top: 0;
+}
+
+.card {
+  background: linear-gradient(180deg, var(--card) 0%, var(--card-2) 100%);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.form-grid-full {
+  grid-column: 1 / -1;
+}
+
+input, textarea, select {
+  width: 100%;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px;
+  color: white;
+  outline: none;
+  font-size: 15px;
+}
+
+input::placeholder, textarea::placeholder {
+  color: #9fb0c7;
+}
+
+textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--neutral);
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.mensagem {
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.vagas-grid,
+.candidaturas-grid,
+.candidatos-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.vaga, .candidato {
+  background: linear-gradient(180deg, #132033 0%, #1c2a41 100%);
+  border: 1px solid var(--line);
+  padding: 16px;
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+}
+
+.vaga h3, .candidato h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 19px;
+  line-height: 1.25;
+}
+
+.vaga p, .candidato p {
+  margin: 7px 0;
+  color: var(--neutral);
+  line-height: 1.45;
+  font-size: 14px;
+  word-break: break-word;
+}
+
+.vaga strong, .candidato strong {
+  color: white;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.14), transparent);
+  margin: 20px 0;
+}
+
+.filtros-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  align-items: end;
+}
+
+.top-info {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.info-pill {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--line);
+  color: var(--neutral);
+  border-radius: 999px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: bold;
+  width: 100%;
+}
+
+.oculto {
+  display: none !important;
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.78);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.modal-box {
+  background: linear-gradient(180deg, #132033 0%, #1c2a41 100%);
+  border: 1px solid var(--line);
+  padding: 18px;
+  margin: 20px auto;
+  width: 100%;
+  max-width: 560px;
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+}
+
+.linha-status {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.footer-note {
+  color: #7f8ea7;
+  font-size: 12px;
+  text-align: center;
+  margin-top: 22px;
+  line-height: 1.4;
+}
+
+@media (min-width: 700px) {
+  body {
+    padding: 20px;
   }
 
-  const titulo = document.getElementById("titulo").value.trim();
-  const empresa = document.getElementById("empresa").value.trim();
-  const cidade = document.getElementById("cidade").value.trim();
-  const salario = document.getElementById("salario").value.trim();
-  const descricao = document.getElementById("descricao").value.trim();
-
-  if (!titulo || !empresa || !cidade || !salario || !descricao) {
-    alert("Preencha todos os campos da vaga.");
-    return;
+  .hero {
+    padding: 28px 24px;
   }
 
-  try {
-    if (vagaEditandoId) {
-      await updateDoc(doc(db, "Vagas", vagaEditandoId), {
-        Titulo: titulo,
-        Empresa: empresa,
-        Cidade: cidade,
-        Salario: salario,
-        Descrição: descricao
-      });
-
-      document.getElementById("mensagem-empresa").innerHTML = "Vaga atualizada com sucesso.";
-      vagaEditandoId = null;
-    } else {
-      await addDoc(collection(db, "Vagas"), {
-        Titulo: titulo,
-        Empresa: empresa,
-        Cidade: cidade,
-        Salario: salario,
-        Descrição: descricao,
-        EmpresaId: usuarioAtual.uid,
-        EmpresaNome: nomeEmpresaAtual,
-        Data: new Date()
-      });
-
-      document.getElementById("mensagem-empresa").innerHTML = "Vaga cadastrada com sucesso.";
-    }
-
-    document.getElementById("titulo").value = "";
-    document.getElementById("empresa").value = nomeEmpresaAtual || "";
-    document.getElementById("cidade").value = "";
-    document.getElementById("salario").value = "";
-    document.getElementById("descricao").value = "";
-
-    carregarVagasEmpresa();
-    carregarVagas();
-  } catch (erro) {
-    console.error("Erro ao salvar vaga:", erro);
-    alert("Erro ao salvar vaga.");
-  }
-}
-
-function editarVaga(id, titulo, empresa, cidade, salario, descricao) {
-  document.getElementById("titulo").value = titulo;
-  document.getElementById("empresa").value = empresa;
-  document.getElementById("cidade").value = cidade;
-  document.getElementById("salario").value = salario;
-  document.getElementById("descricao").value = descricao;
-
-  vagaEditandoId = id;
-
-  document.getElementById("mensagem-empresa").innerHTML = "Modo edição ativado. Altere os dados e clique em Salvar vaga.";
-  abrirSecao("secao-empresa");
-  window.scrollTo({ top: 0, behavior: "smooth" });
-}
-
-async function carregarVagas() {
-  const mensagem = document.getElementById("mensagem-vagas");
-  if (mensagem) mensagem.innerHTML = "Carregando vagas...";
-
-  try {
-    const snapshot = await getDocs(query(collection(db, "Vagas"), orderBy("Data", "desc")));
-
-    todasAsVagas = [];
-
-    snapshot.forEach((docItem) => {
-      todasAsVagas.push({
-        id: docItem.id,
-        ...docItem.data()
-      });
-    });
-
-    renderizarVagasFiltradas();
-  } catch (erro) {
-    console.error("Erro ao carregar vagas:", erro);
-    if (mensagem) mensagem.innerHTML = "Erro ao carregar vagas.";
-  }
-}
-
-function renderizarVagasFiltradas() {
-  const container = document.getElementById("vagas");
-  const mensagem = document.getElementById("mensagem-vagas");
-
-  const filtroTitulo = (document.getElementById("filtro-titulo")?.value || "").trim().toLowerCase();
-  const filtroCidade = (document.getElementById("filtro-cidade")?.value || "").trim().toLowerCase();
-
-  container.innerHTML = "";
-
-  const vagasFiltradas = todasAsVagas.filter((vaga) => {
-    const titulo = String(vaga.Titulo || "").toLowerCase();
-    const cidade = String(vaga.Cidade || "").toLowerCase();
-
-    const atendeTitulo = !filtroTitulo || titulo.includes(filtroTitulo);
-    const atendeCidade = !filtroCidade || cidade.includes(filtroCidade);
-
-    return atendeTitulo && atendeCidade;
-  });
-
-  if (vagasFiltradas.length === 0) {
-    if (mensagem) mensagem.innerHTML = "Nenhuma vaga encontrada com esse filtro.";
-    return;
+  .hero h1 {
+    font-size: 38px;
   }
 
-  if (mensagem) mensagem.innerHTML = `${vagasFiltradas.length} vaga(s) encontrada(s).`;
-
-  vagasFiltradas.forEach((vaga) => {
-    const div = document.createElement("div");
-    div.className = "vaga";
-
-    const titulo = vaga.Titulo || "";
-    const empresa = vaga.Empresa || "";
-    const cidade = vaga.Cidade || "";
-    const salario = vaga.Salario || "";
-    const descricao = vaga.Descrição || "";
-
-    div.innerHTML = `
-      <h3>${titulo}</h3>
-      <p><strong>Empresa:</strong> ${empresa}</p>
-      <p><strong>Cidade:</strong> ${cidade}</p>
-      <p><strong>Salário:</strong> ${salario}</p>
-      <p><strong>Descrição:</strong> ${descricao}</p>
-
-      <button class="acao-candidato"
-        onclick="verificarAcesso('${encodeURIComponent(titulo)}','${encodeURIComponent(empresa)}','${encodeURIComponent(cidade)}')">
-        Candidatar-se
-      </button>
-
-      <button class="acao-neutra"
-        onclick="compartilharVaga('${encodeURIComponent(titulo)}')">
-        Compartilhar
-      </button>
-    `;
-
-    container.appendChild(div);
-  });
-}
-
-function aplicarFiltrosVagas() {
-  renderizarVagasFiltradas();
-}
-
-function limparFiltrosVagas() {
-  document.getElementById("filtro-titulo").value = "";
-  document.getElementById("filtro-cidade").value = "";
-  renderizarVagasFiltradas();
-}
-
-function verificarAcesso(titulo, empresa, cidade) {
-  if (!acessoLiberado) {
-    alert("Compartilhe a vaga para liberar a candidatura.");
-    return;
+  .menu {
+    grid-template-columns: repeat(3, 1fr);
   }
 
-  abrirModalCandidatura(
-    decodeURIComponent(titulo),
-    decodeURIComponent(empresa),
-    decodeURIComponent(cidade)
-  );
-}
-
-function compartilharVaga(titulo) {
-  const url = `${window.location.origin}${window.location.pathname}?vaga=${titulo}`;
-
-  navigator.clipboard.writeText(url).then(() => {
-    acessoLiberado = true;
-    alert("Link copiado! Agora você pode se candidatar.");
-  }).catch(() => {
-    acessoLiberado = true;
-    alert("Não consegui copiar automaticamente, mas a candidatura foi liberada.");
-  });
-}
-
-async function carregarVagasEmpresa() {
-  const container = document.getElementById("vagas-empresa");
-  const mensagem = document.getElementById("mensagem-vagas-empresa");
-
-  container.innerHTML = "";
-  mensagem.innerHTML = "Carregando vagas da empresa...";
-
-  if (!usuarioAtual || tipoUsuario !== "empresa") {
-    mensagem.innerHTML = "Faça login como empresa.";
-    return;
+  .form-grid {
+    grid-template-columns: repeat(2, minmax(220px, 1fr));
   }
 
-  try {
-    const snapshot = await getDocs(query(collection(db, "Vagas"), orderBy("Data", "desc")));
+  .actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
 
-    let encontrou = false;
-    container.innerHTML = "";
+  .vagas-grid,
+  .candidaturas-grid,
+  .candidatos-grid {
+    grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  }
 
-    snapshot.forEach((docItem) => {
-      const vaga = docItem.data();
+  .filtros-grid {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
 
-      if ((vaga.EmpresaId || "") !== usuarioAtual.uid) return;
+  .info-pill {
+    width: auto;
+  }
 
-      encontrou = true;
+  .linha-status {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+}
+</style>
+</head>
+<body>
+  <div class="container">
 
-      const titulo = vaga.Titulo || "";
-      const cidade = vaga.Cidade || "";
-      const salario = vaga.Salario || "";
-      const descricao = vaga.Descrição || "";
+    <div class="hero">
+      <div class="hero-top">
+        <div class="logo-box">
+          <div class="logo-mark">S</div>
+          <div>
+            <h1>StaffGo</h1>
+            <p>Conectando empresas e profissionais com agilidade, clareza e escala.</p>
+          </div>
+        </div>
 
-      const div = document.createElement("div");
-      div.className = "vaga";
+        <div class="badge">MVP funcional em evolução</div>
+      </div>
 
-      div.innerHTML = `
-        <h3>${titulo}</h3>
-        <p><strong>Cidade:</strong> ${cidade}</p>
-        <p><strong>Salário:</strong> ${salario}</p>
+      <div class="menu">
+        <button class="acao-neutra" onclick="abrirSecao('secao-vagas')">Ver vagas</button>
+        <button class="acao-empresa" onclick="abrirSecao('secao-empresa')">Sou empresa</button>
+        <button class="acao-candidato" onclick="abrirSecao('secao-candidato')">Sou candidato</button>
+      </div>
+    </div>
+
+    <!-- VAGAS -->
+    <div id="secao-vagas" class="section">
+      <h2>Vagas disponíveis</h2>
+
+      <div class="card">
+        <div class="filtros-grid">
+          <div>
+            <label for="filtro-titulo">Cargo / vaga</label>
+            <input id="filtro-titulo" placeholder="Ex: Recepcionista">
+          </div>
+
+          <div>
+            <label for="filtro-cidade">Cidade</label>
+            <input id="filtro-cidade" placeholder="Ex: São Paulo">
+          </div>
+
+          <div class="actions">
+            <button class="acao-candidato" onclick="aplicarFiltrosVagas()">Filtrar</button>
+            <button class="acao-neutra" onclick="limparFiltrosVagas()">Limpar filtros</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="mensagem-vagas" class="mensagem"></div>
+      <div id="vagas" class="vagas-grid"></div>
+    </div>
+
+    <!-- EMPRESA -->
+    <div id="secao-empresa" class="section" style="display:none">
+      <h2>Área da empresa</h2>
+
+      <div id="empresa-auth" class="card">
+        <div class="form-grid">
+          <div>
+            <label for="empresa-nome-cadastro">Nome da empresa</label>
+            <input id="empresa-nome-cadastro" placeholder="Nome da empresa">
+          </div>
+
+          <div>
+            <label for="empresa-email">E-mail</label>
+            <input id="empresa-email" placeholder="Email">
+          </div>
+
+          <div class="form-grid-full">
+            <label for="empresa-senha">Senha</label>
+            <input id="empresa-senha" type="password" placeholder="Senha">
+          </div>
+        </div>
+
         <div class="actions">
-          <button class="acao-candidato" onclick="verCandidatosDaVaga('${escapeTexto(titulo)}')">Ver candidatos</button>
-          <button class="acao-empresa" onclick="editarVaga('${docItem.id}','${escapeTexto(titulo)}','${escapeTexto(nomeEmpresaAtual)}','${escapeTexto(cidade)}','${escapeTexto(salario)}','${escapeTexto(descricao)}')">Editar vaga</button>
+          <button class="acao-empresa" onclick="cadastrarEmpresa()">Cadastrar</button>
+          <button class="acao-candidato" onclick="loginEmpresa()">Entrar</button>
         </div>
-      `;
 
-      container.appendChild(div);
-    });
+        <div id="mensagem-auth" class="mensagem"></div>
+      </div>
 
-    mensagem.innerHTML = encontrou ? "" : "Nenhuma vaga sua cadastrada.";
-  } catch (erro) {
-    console.error("Erro ao carregar vagas da empresa:", erro);
-    mensagem.innerHTML = "Erro ao carregar vagas da empresa.";
-  }
-}
+      <div id="empresa-logada-box" class="card oculto">
+        <div class="top-info">
+          <div class="info-pill">Empresa: <span id="empresa-logada-nome"></span></div>
+        </div>
+        <button class="acao-alerta" onclick="logoutEmpresa()">Sair</button>
+      </div>
 
-function abrirModalCandidatura(titulo, empresa, cidade) {
-  vagaSelecionada = { titulo, empresa, cidade };
+      <div id="empresa-painel-conteudo" class="oculto">
+        <div class="divider"></div>
 
-  document.getElementById("cand-nome").value = dadosCandidatoAtual.Nome || "";
-  document.getElementById("cand-whatsapp").value = dadosCandidatoAtual.WhatsApp || "";
-  document.getElementById("cand-experiencia").value = dadosCandidatoAtual.Experiencia || "";
+        <div class="card">
+          <h3>Cadastrar vaga</h3>
 
-  document.getElementById("mensagem-candidatura").innerHTML = "";
-  document.getElementById("modal-candidatura-fundo").style.display = "block";
-}
+          <div class="form-grid">
+            <div>
+              <label for="titulo">Título</label>
+              <input id="titulo" placeholder="Título da vaga">
+            </div>
 
-function fecharModalCandidatura() {
-  document.getElementById("modal-candidatura-fundo").style.display = "none";
-}
+            <div>
+              <label for="empresa">Empresa</label>
+              <input id="empresa" placeholder="Empresa">
+            </div>
 
-async function enviarCandidatura() {
-  if (!usuarioAtual || tipoUsuario !== "candidato") {
-    alert("Faça login como candidato antes de se candidatar.");
-    return;
-  }
+            <div>
+              <label for="cidade">Cidade</label>
+              <input id="cidade" placeholder="Cidade">
+            </div>
 
-  const nome = document.getElementById("cand-nome").value.trim();
-  const whatsapp = document.getElementById("cand-whatsapp").value.trim();
-  const experiencia = document.getElementById("cand-experiencia").value.trim();
+            <div>
+              <label for="salario">Salário</label>
+              <input id="salario" placeholder="Salário">
+            </div>
 
-  if (!nome || !whatsapp || !experiencia) {
-    alert("Preencha todos os campos da candidatura.");
-    return;
-  }
+            <div class="form-grid-full">
+              <label for="descricao">Descrição</label>
+              <textarea id="descricao" placeholder="Descrição"></textarea>
+            </div>
+          </div>
 
-  if (!vagaSelecionada) {
-    alert("Nenhuma vaga selecionada.");
-    return;
-  }
+          <div class="actions">
+            <button class="acao-empresa" onclick="salvarOuAtualizarVaga()">Salvar vaga</button>
+          </div>
 
-  try {
-    await updateDoc(doc(db, "Usuarios", usuarioAtual.uid), {
-      Nome: nome,
-      WhatsApp: whatsapp,
-      Experiencia: experiencia
-    });
+          <div id="mensagem-empresa" class="mensagem"></div>
+        </div>
 
-    dadosCandidatoAtual.Nome = nome;
-    dadosCandidatoAtual.WhatsApp = whatsapp;
-    dadosCandidatoAtual.Experiencia = experiencia;
-    document.getElementById("candidato-logado-nome").textContent = nome;
+        <div class="divider"></div>
 
-    const perfilNome = document.getElementById("perfil-cand-nome");
-    const perfilWhatsApp = document.getElementById("perfil-cand-whatsapp");
-    const perfilExperiencia = document.getElementById("perfil-cand-experiencia");
+        <h3>Minhas vagas</h3>
+        <div id="mensagem-vagas-empresa" class="mensagem"></div>
+        <div id="vagas-empresa" class="vagas-grid"></div>
+      </div>
+    </div>
 
-    if (perfilNome) perfilNome.value = nome;
-    if (perfilWhatsApp) perfilWhatsApp.value = whatsapp;
-    if (perfilExperiencia) perfilExperiencia.value = experiencia;
+    <!-- CANDIDATO -->
+    <div id="secao-candidato" class="section" style="display:none">
+      <h2>Área do candidato</h2>
 
-    await addDoc(collection(db, "Candidatos"), {
-      Nome: nome,
-      WhatsApp: whatsapp,
-      Experiencia: experiencia,
-      UsuarioId: usuarioAtual.uid,
-      Vaga: vagaSelecionada.titulo,
-      Empresa: vagaSelecionada.empresa,
-      Cidade: vagaSelecionada.cidade,
-      Status: "Enviado",
-      Data: new Date()
-    });
+      <div id="candidato-auth" class="card">
+        <div class="form-grid">
+          <div>
+            <label for="cand-nome-cadastro">Seu nome</label>
+            <input id="cand-nome-cadastro" placeholder="Seu nome">
+          </div>
 
-    document.getElementById("mensagem-candidatura").innerHTML = "Candidatura enviada com sucesso.";
-    carregarMinhasCandidaturas();
+          <div>
+            <label for="cand-email">E-mail</label>
+            <input id="cand-email" placeholder="Email">
+          </div>
 
-    setTimeout(() => {
-      fecharModalCandidatura();
-    }, 1000);
-  } catch (erro) {
-    console.error("Erro ao enviar candidatura:", erro);
-    alert("Erro ao enviar candidatura.");
-  }
-}
+          <div class="form-grid-full">
+            <label for="cand-senha">Senha</label>
+            <input id="cand-senha" type="password" placeholder="Senha">
+          </div>
+        </div>
 
-async function carregarMinhasCandidaturas() {
-  const container = document.getElementById("minhas-candidaturas");
-  if (!container) return;
-
-  container.innerHTML = "Carregando...";
-
-  if (!usuarioAtual || tipoUsuario !== "candidato") {
-    container.innerHTML = "";
-    return;
-  }
-
-  try {
-    const snapshot = await getDocs(query(collection(db, "Candidatos"), orderBy("Data", "desc")));
-
-    container.innerHTML = "";
-    let encontrou = false;
-
-    snapshot.forEach((docItem) => {
-      const candidatura = docItem.data();
-
-      if ((candidatura.UsuarioId || "") !== usuarioAtual.uid) return;
-
-      encontrou = true;
-
-      const status = candidatura.Status || "Enviado";
-      const nome = candidatura.Nome || "";
-      const whatsapp = candidatura.WhatsApp || "";
-      const experiencia = candidatura.Experiencia || "";
-
-      const div = document.createElement("div");
-      div.className = "vaga";
-
-      div.innerHTML = `
-        <h3>${candidatura.Vaga || ""}</h3>
-        <p><strong>Empresa:</strong> ${candidatura.Empresa || ""}</p>
-        <p><strong>Cidade:</strong> ${candidatura.Cidade || ""}</p>
-        <p><strong>Status:</strong> ${status}</p>
         <div class="actions">
-          <button class="acao-candidato" onclick="editarCandidatura('${docItem.id}','${escapeTexto(nome)}','${escapeTexto(whatsapp)}','${escapeTexto(experiencia)}')">Editar candidatura</button>
-          <button class="acao-alerta" onclick="retirarCandidatura('${docItem.id}')">Retirar candidatura</button>
+          <button class="acao-empresa" onclick="cadastrarCandidato()">Cadastrar</button>
+          <button class="acao-candidato" onclick="loginCandidato()">Entrar</button>
         </div>
-      `;
 
-      container.appendChild(div);
-    });
+        <div id="mensagem-candidato-auth" class="mensagem"></div>
+      </div>
 
-    if (!encontrou) {
-      container.innerHTML = "<p>Nenhuma candidatura encontrada.</p>";
-    }
-  } catch (erro) {
-    console.error("Erro ao carregar candidaturas:", erro);
-    container.innerHTML = "<p>Erro ao carregar candidaturas.</p>";
-  }
-}
-
-function editarCandidatura(id, nomeAtual, whatsappAtual, experienciaAtual) {
-  candidaturaEditandoId = id;
-
-  const campoNome = document.getElementById("edit-nome");
-  const campoWhatsApp = document.getElementById("edit-whatsapp");
-  const campoExperiencia = document.getElementById("edit-experiencia");
-  const modal = document.getElementById("modal-editar");
-
-  if (!campoNome || !campoWhatsApp || !campoExperiencia || !modal) {
-    alert("O modal de edição não está disponível no HTML atual.");
-    return;
-  }
-
-  campoNome.value = nomeAtual || "";
-  campoWhatsApp.value = whatsappAtual || "";
-  campoExperiencia.value = experienciaAtual || "";
-
-  modal.style.display = "block";
-}
-
-async function salvarEdicaoCandidatura() {
-  if (!candidaturaEditandoId) {
-    alert("Nenhuma candidatura selecionada para edição.");
-    return;
-  }
-
-  const nome = document.getElementById("edit-nome")?.value.trim() || "";
-  const whatsapp = document.getElementById("edit-whatsapp")?.value.trim() || "";
-  const experiencia = document.getElementById("edit-experiencia")?.value.trim() || "";
-
-  if (!nome || !whatsapp || !experiencia) {
-    alert("Preencha todos os campos da candidatura.");
-    return;
-  }
-
-  try {
-    await updateDoc(doc(db, "Candidatos", candidaturaEditandoId), {
-      Nome: nome,
-      WhatsApp: whatsapp,
-      Experiencia: experiencia
-    });
-
-    fecharModalEditar();
-    carregarMinhasCandidaturas();
-    alert("Candidatura atualizada com sucesso.");
-  } catch (erro) {
-    console.error("Erro ao atualizar candidatura:", erro);
-    alert("Erro ao atualizar candidatura.");
-  }
-}
-
-function fecharModalEditar() {
-  const modal = document.getElementById("modal-editar");
-  if (modal) {
-    modal.style.display = "none";
-  }
-  candidaturaEditandoId = null;
-}
-
-async function retirarCandidatura(id) {
-  const confirmar = confirm("Deseja retirar esta candidatura?");
-  if (!confirmar) return;
-
-  try {
-    await deleteDoc(doc(db, "Candidatos", id));
-    carregarMinhasCandidaturas();
-    alert("Candidatura retirada com sucesso.");
-  } catch (erro) {
-    console.error("Erro ao retirar candidatura:", erro);
-    alert("Erro ao retirar candidatura.");
-  }
-}
-
-async function verCandidatosDaVaga(tituloVaga) {
-  const lista = document.getElementById("lista-candidatos");
-  const mensagem = document.getElementById("mensagem-candidatos");
-
-  lista.innerHTML = "";
-  mensagem.innerHTML = "Carregando candidatos...";
-  document.getElementById("modal-candidatos-fundo").style.display = "block";
-
-  if (!usuarioAtual || tipoUsuario !== "empresa") {
-    mensagem.innerHTML = "Faça login como empresa.";
-    return;
-  }
-
-  try {
-    const vagasSnap = await getDocs(query(collection(db, "Vagas"), orderBy("Data", "desc")));
-    let vagaPertenceEmpresa = false;
-
-    vagasSnap.forEach((docItem) => {
-      const vaga = docItem.data();
-      if ((vaga.Titulo || "") === tituloVaga && (vaga.EmpresaId || "") === usuarioAtual.uid) {
-        vagaPertenceEmpresa = true;
-      }
-    });
-
-    if (!vagaPertenceEmpresa) {
-      mensagem.innerHTML = "Essa vaga não pertence à empresa logada.";
-      return;
-    }
-
-    const candSnap = await getDocs(query(collection(db, "Candidatos"), orderBy("Data", "desc")));
-
-    lista.innerHTML = "";
-    let encontrou = false;
-
-    candSnap.forEach((docItem) => {
-      const c = docItem.data();
-
-      if ((c.Vaga || "") !== tituloVaga) return;
-      if ((c.Empresa || "") !== nomeEmpresaAtual) return;
-
-      encontrou = true;
-      const statusAtual = c.Status || "Enviado";
-
-      const div = document.createElement("div");
-      div.className = "candidato";
-
-      div.innerHTML = `
-        <h3>${c.Nome || ""}</h3>
-        <p><strong>WhatsApp:</strong> ${c.WhatsApp || ""}</p>
-        <p><strong>Experiência:</strong> ${c.Experiencia || ""}</p>
-        <p><strong>Status atual:</strong> ${statusAtual}</p>
-
-        <div class="linha-status">
-          <select id="status-${docItem.id}">
-            <option value="Enviado" ${statusAtual === "Enviado" ? "selected" : ""}>Enviado</option>
-            <option value="Em análise" ${statusAtual === "Em análise" ? "selected" : ""}>Em análise</option>
-            <option value="Entrevista" ${statusAtual === "Entrevista" ? "selected" : ""}>Entrevista</option>
-            <option value="Aprovado" ${statusAtual === "Aprovado" ? "selected" : ""}>Aprovado</option>
-            <option value="Reprovado" ${statusAtual === "Reprovado" ? "selected" : ""}>Reprovado</option>
-          </select>
-          <button class="acao-empresa" onclick="atualizarStatusCandidatura('${docItem.id}')">Salvar status</button>
+      <div id="candidato-logado-box" class="card oculto">
+        <div class="top-info">
+          <div class="info-pill">Logado como: <span id="candidato-logado-nome"></span></div>
         </div>
-      `;
+        <button class="acao-alerta" onclick="logoutCandidato()">Sair</button>
+      </div>
 
-      lista.appendChild(div);
-    });
+      <div id="candidato-painel" class="oculto">
+        <div class="card">
+          <h3>Meu perfil</h3>
 
-    mensagem.innerHTML = encontrou ? "" : "Nenhum candidato encontrado para essa vaga.";
-  } catch (erro) {
-    console.error("Erro ao carregar candidatos da vaga:", erro);
-    mensagem.innerHTML = "Erro ao carregar candidatos.";
-  }
-}
+          <div class="form-grid">
+            <div>
+              <label for="perfil-cand-nome">Nome</label>
+              <input id="perfil-cand-nome" placeholder="Seu nome">
+            </div>
 
-async function atualizarStatusCandidatura(candidaturaId) {
-  try {
-    const select = document.getElementById(`status-${candidaturaId}`);
-    const novoStatus = select.value;
+            <div>
+              <label for="perfil-cand-whatsapp">WhatsApp</label>
+              <input id="perfil-cand-whatsapp" placeholder="WhatsApp">
+            </div>
 
-    await updateDoc(doc(db, "Candidatos", candidaturaId), {
-      Status: novoStatus
-    });
+            <div class="form-grid-full">
+              <label for="perfil-cand-experiencia">Experiência</label>
+              <textarea id="perfil-cand-experiencia" placeholder="Resumo da sua experiência"></textarea>
+            </div>
+          </div>
 
-    document.getElementById("mensagem-candidatos").innerHTML = "Status atualizado com sucesso.";
-    carregarMinhasCandidaturas();
-  } catch (erro) {
-    console.error("Erro ao atualizar status:", erro);
-    document.getElementById("mensagem-candidatos").innerHTML = "Erro ao atualizar status.";
-  }
-}
+          <div class="actions">
+            <button class="acao-candidato" onclick="salvarPerfilCandidato()">Salvar perfil</button>
+          </div>
 
-function fecharModalCandidatos() {
-  document.getElementById("modal-candidatos-fundo").style.display = "none";
-}
+          <div id="mensagem-perfil-candidato" class="mensagem"></div>
+        </div>
 
-function escapeTexto(texto) {
-  return String(texto)
-    .replace(/\\/g, "\\\\")
-    .replace(/'/g, "\\'")
-    .replace(/"/g, "&quot;")
-    .replace(/\n/g, " ");
-}
+        <div class="divider"></div>
 
-carregarVagas();
+        <h3>Minhas candidaturas</h3>
+        <div id="minhas-candidaturas" class="candidaturas-grid"></div>
+      </div>
+    </div>
+
+    <!-- MODAL CANDIDATURA -->
+    <div id="modal-candidatura-fundo" class="modal">
+      <div class="modal-box">
+        <h3>Candidatar-se</h3>
+
+        <label for="cand-nome">Nome</label>
+        <input id="cand-nome" placeholder="Nome">
+
+        <label for="cand-whatsapp">WhatsApp</label>
+        <input id="cand-whatsapp" placeholder="WhatsApp">
+
+        <label for="cand-experiencia">Experiência</label>
+        <textarea id="cand-experiencia" placeholder="Experiência"></textarea>
+
+        <div class="actions">
+          <button class="acao-empresa" onclick="enviarCandidatura()">Enviar</button>
+          <button class="acao-alerta" onclick="fecharModalCandidatura()">Fechar</button>
+        </div>
+
+        <div id="mensagem-candidatura" class="mensagem"></div>
+      </div>
+    </div>
+
+    <!-- MODAL EDITAR CANDIDATURA -->
+    <div id="modal-editar" class="modal">
+      <div class="modal-box">
+        <h3>Editar candidatura</h3>
+
+        <label for="edit-nome">Nome</label>
+        <input id="edit-nome" placeholder="Nome">
+
+        <label for="edit-whatsapp">WhatsApp</label>
+        <input id="edit-whatsapp" placeholder="WhatsApp">
+
+        <label for="edit-experiencia">Experiência</label>
+        <textarea id="edit-experiencia" placeholder="Experiência"></textarea>
+
+        <div class="actions">
+          <button class="acao-candidato" onclick="salvarEdicaoCandidatura()">Salvar alterações</button>
+          <button class="acao-alerta" onclick="fecharModalEditar()">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL CANDIDATOS -->
+    <div id="modal-candidatos-fundo" class="modal">
+      <div class="modal-box">
+        <h3>Candidatos da vaga</h3>
+        <div id="lista-candidatos" class="candidatos-grid"></div>
+        <div id="mensagem-candidatos" class="mensagem"></div>
+        <div class="actions">
+          <button class="acao-alerta" onclick="fecharModalCandidatos()">Fechar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-note">
+      StaffGo MVP • edição da candidatura por modal
+    </div>
+  </div>
+
+  <script type="module" src="script.js"></script>
+</body>
+</html>
